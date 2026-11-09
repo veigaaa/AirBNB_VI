@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Airbnb Explorer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <p class="brand">Airbnb Explorer</p>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="intro-title">
+      <h1 id="intro-title">Explorar o mercado</h1>
+      <p class="description">
+        Conheça os preços e a concorrência no mercado de alojamento local
+        para apoiar as suas decisões como investidor ou proprietário.
+      </p>
+
+      <p class="city-label" id="city-label">Escolha a cidade que pretende analisar</p>
+      <div class="cities" role="group" aria-labelledby="city-label">
+        <button class="city" type="button" data-city="Lisboa" aria-pressed="false">Lisboa</button>
+        <button class="city" type="button" data-city="Porto" aria-pressed="false">Porto</button>
+      </div>
+
+      <section class="map-section" id="map-section" aria-labelledby="map-title" hidden>
+        <section class="map-panel" aria-labelledby="map-title">
+          <div class="map-heading">
+            <h2 id="map-title">Freguesias</h2>
+            <div class="map-actions">
+              <button class="secondary" id="clear-selection" type="button" disabled>Limpar seleção</button>
+              <button class="secondary" id="reset-view" type="button" disabled>Vista geral</button>
+            </div>
+          </div>
+          <p id="map-status" role="status"></p>
+          <div class="map-canvas">
+            <svg id="map" viewBox="0 0 800 600" role="group" aria-label="Mapa de freguesias" hidden></svg>
+            <div class="zoom-controls" role="group" aria-label="Zoom do mapa">
+              <button class="secondary" id="zoom-in" type="button" aria-label="Aproximar mapa" disabled>+</button>
+              <button class="secondary" id="zoom-out" type="button" aria-label="Afastar mapa" disabled>−</button>
+            </div>
+          </div>
+          <div class="density-legend" id="density-legend" hidden>
+            <p id="legend-title">Densidade de anúncios</p>
+            <div id="legend-gradient" aria-hidden="true"></div>
+            <div id="legend-values"></div>
+            <p class="legend-note">Anúncios/km² · do menor ao maior valor da cidade atual.<br>Área aproximada a partir dos polígonos GeoJSON.</p>
+          </div>
+          <p id="parish-name">Passe o rato sobre uma freguesia para ver o nome. Clique para selecionar.</p>
+          <p class="map-help">Use a roda do rato ou os botões + e − para ampliar. Arraste para deslocar o mapa.</p>
+        </section>
+        <section class="results-panel" aria-labelledby="results-title">
+          <h2 id="results-title">Anúncios encontrados</h2>
+          <p id="result-count" role="status"></p>
+          <div class="listing-scroll" id="listing-scroll" role="region" aria-label="Lista de anúncios" tabindex="0">
+            <ul id="listing-list"></ul>
+          </div>
+          <nav class="pagination" aria-label="Páginas de anúncios">
+            <button class="secondary" id="previous-page" type="button" disabled>Anterior</button>
+            <span id="page-label" role="status"></span>
+            <button class="secondary" id="next-page" type="button" disabled>Seguinte</button>
+          </nav>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
