@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>D3 Selection and Chaining</title>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+    </head>
+    <body>
+        <p class="p1">Hello </p>
+        <script>
+            // The same operations can also be tried in the browser console.
+            let elem = d3.select(".p1");
+            console.log("Original background color:", elem.style("background-color"));
+            elem.style("background-color", "#990099")
+                .text("Good morning World!");
+        </script>
+    </body>
+</html>

@@ -1,0 +1,91 @@
+IDEIA 2 — TURISTAS
+Projeto de Information Visualisation (2026/2027)
+Nome provisório: Airbnb Tourist Explorer — Onde ficar em Lisboa?
+Estado: proposta conceptual para a primeira iteração
+
+1. PROBLEMA E MOTIVAÇÃO
+Um turista que prepara uma viagem precisa de decidir em que zona da cidade ficará alojado. Comparar apenas anúncios individuais pode dificultar a compreensão das diferenças entre bairros, como preços, diversidade de alojamentos, capacidade e proximidade a atrações turísticas.
+
+A aplicação propõe uma exploração visual do mercado de alojamento local para ajudar o turista a COMPARAR ZONAS, em vez de tentar substituir o motor de reservas do Airbnb.
+
+2. PÚBLICO-ALVO E CONTEXTO DE UTILIZAÇÃO
+Público principal: turistas que planeiam uma visita à cidade e ainda não decidiram onde ficar.
+Contexto: planeamento prévio da viagem, num computador, com orçamento e preferências aproximadas.
+Exemplo: um grupo de quatro pessoas pretende visitar Lisboa e procura perceber que bairros oferecem alojamentos inteiros acessíveis e próximos das atrações que pretende conhecer.
+
+3. OBJETIVO PRINCIPAL
+Ajudar o utilizador a identificar zonas que ofereçam um compromisso adequado entre preço anunciado, características do alojamento e localização.
+
+Pergunta central:
+«Que zonas de Lisboa oferecem alojamentos adequados ao meu orçamento e preferências, tendo em conta os locais que quero visitar?»
+
+4. PERGUNTAS A RESPONDER
+- Quais os bairros com preços medianos mais acessíveis para determinado tipo de alojamento?
+- Em que zonas existem mais opções para um determinado número de hóspedes?
+- Como difere o preço entre alojamentos inteiros e quartos privados?
+- Há zonas com alojamentos bem avaliados e preços relativamente baixos?
+- Que zonas ficam geograficamente mais próximas das atrações selecionadas?
+- A proximidade a atrações turísticas parece estar associada a preços mais elevados?
+- Qual o compromisso entre preço e distância a várias atrações de interesse?
+
+5. DADOS E FEATURES
+Fonte principal: Inside Airbnb (https://insideairbnb.com/get-the-data/), utilizando sobretudo listings.csv.gz.
+Colunas prioritárias:
+- id — identificação do anúncio
+- latitude, longitude — localização aproximada do alojamento
+- neighbourhood_cleansed — bairro
+- price — preço anunciado por noite
+- room_type, property_type — tipologia
+- accommodates — capacidade de hóspedes
+- bedrooms — número de quartos
+- review_scores_rating — classificação
+- number_of_reviews — número de avaliações
+- availability_365 — disponibilidade agregada (indicador contextual, não reservas efetivas)
+
+Possível dataset complementar:
+- Pontos turísticos (POIs) obtidos, por exemplo, do OpenStreetMap / Overpass Turbo ou de dados públicos municipais.
+- Campos úteis: nome do ponto, categoria, latitude e longitude.
+- Variável derivada: distância em linha reta entre alojamento e atração (não equivale à distância percorrida a pé ou ao tempo de viagem).
+
+NOTA SOBRE COMPLEXIDADE:
+Um segundo dataset de atrações seria potencialmente muito útil para diferenciar esta ideia. Contudo, acrescenta trabalho de recolha, seleção e validação de atrações, harmonização de coordenadas e cálculo de distâncias. Pode complicar o desenvolvimento e os testes. Para reduzir o risco, começar por 15 a 30 atrações ou deixar esta funcionalidade como extensão. A versão mínima pode funcionar apenas com os dados Inside Airbnb, comparando bairros, preços e tipologias.
+
+6. VISUALIZAÇÕES PROPOSTAS (D3.JS)
+A. Mapa interativo: anúncios por localização e, se disponível, pontos turísticos selecionáveis; filtros por tipo, preço e capacidade.
+B. Gráfico de barras: preço mediano por bairro, adaptado aos filtros escolhidos.
+C. Gráfico de dispersão: preço anunciado versus distância a uma atração selecionada (se houver POIs); na versão sem POIs, preço versus avaliação ou capacidade.
+
+Interações: seleção de bairros, filtros, destaque coordenado entre gráficos, zoom no mapa e detalhes sob pedido (tooltip/painel de anúncio).
+
+7. PROTÓTIPO DE BAIXA FIDELIDADE
+Sugestão: Figma com wireframes a cinzento e estados clicáveis; alternativa rápida em papel com cartões de filtros e ecrãs sucessivos.
+Estados sugeridos:
+- Visão geral com mapa, gráficos e filtros.
+- Seleção de bairro.
+- Aplicação de orçamento, capacidade e tipo de alojamento.
+- Seleção de atração e visualização da relação distância/preço (apenas se se optar pelo segundo dataset).
+
+8. TESTES DE USABILIDADE
+Tarefas possíveis:
+- Identificar um bairro com preço mediano acessível dentro do orçamento.
+- Filtrar alojamentos para quatro hóspedes e comparar dois bairros.
+- Se existirem atrações, selecionar dois locais de interesse e procurar uma zona com bom compromisso entre distância e preço.
+Registar conclusão das tarefas, dificuldades de leitura dos gráficos, compreensão dos filtros e sugestões.
+
+9. TRATAMENTO DOS DADOS
+Recomenda-se criar um ficheiro limpo CSV/JSON com apenas as features necessárias: conversão dos preços em números, validação de coordenadas, tratamento de valores em falta, tipologias consistentes e documentação das exclusões. Se houver POIs, manter ficheiro separado ou gerar tabela de distâncias no pré-processamento.
+
+10. LIMITAÇÕES
+- Os preços observados são anunciados, não cotações garantidas para a data de uma futura viagem.
+- Disponibilidade no calendário não corresponde necessariamente a reservas confirmadas.
+- As coordenadas dos anúncios podem ser aproximadas.
+- Proximidade geográfica não representa automaticamente acessibilidade por transportes ou caminhada.
+- A aplicação é um explorador de mercado e zonas, não um serviço de reservas.
+
+11. ÂMBITO E PRIMEIRA ITERAÇÃO (26/10/2026)
+Definir público e questões; selecionar cidade e features; justificar três visualizações; criar wireframe em papel ou Figma; preparar e realizar testes de usabilidade. Não é necessária a aplicação D3.js funcional nesta primeira fase.
+
+12. AVALIAÇÃO DA PROPOSTA
+Pontos fortes: objetivo fácil de comunicar, tarefas de utilização concretas, protótipo intuitivo e potencial de interação entre mapa e gráficos.
+Riscos: parecer uma versão simplificada do Airbnb; prometer disponibilidade real; aumentar demasiado o âmbito ao integrar um segundo dataset.
+Decisão em aberto: usar apenas os dados de alojamentos ou acrescentar um pequeno conjunto de atrações turísticas.

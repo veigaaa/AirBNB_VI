@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>First D3 Example</title>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+    </head>
+    <body>
+        <h1>Appending paragraphs</h1>
+        <section id="first-example"></section>
+        <h1>Paragraphs from data</h1>
+        <section id="data-example"></section>
+        <script>
+            d3.select("#first-example")
+                .append("p")
+                .text("New paragraph!");
+
+            d3.select("#first-example")
+                .append("p")
+                .text("Another new paragraph!")
+                .style("color", "teal");
+
+            // Extra values create extra paragraphs automatically through join.
+            let dataset = [5, 10, 15, 20, 25, 30, 35];
+
+            d3.select("#data-example").selectAll("p")
+                .data(dataset)
+                .join("p")
+                .text(function (d) {
+                    return "I can count up to " + d;
+                })
+                .style("color", function (d) {
+                    return d <= 15 ? "black" : "red";
+                })
+                .style("font-size", function (d) {
+                    return (12 + d) + "px";
+                })
+                .style("margin-left", function (d) {
+                    return d + "px";
+                });
+        </script>
+    </body>
+</html>

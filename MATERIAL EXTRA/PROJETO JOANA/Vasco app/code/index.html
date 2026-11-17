@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.75, maximum-scale=0.75">
+    <title>Data Visualization of Fire Patterns in Portugal</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="resources/css/styles.css">
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-text">
+            <h2>Dataset Description</h2>
+            <p>This dataset provides statistics on rural fires in Portugal, categorized by national, district, and county levels. It includes data on the number of fires, burned area (in hectares), fire causes, and fire duration (with a focus on fires lasting over 24 hours).</p>
+            <ul>
+                <li><strong>Num_IncendiosRurais:</strong> Total number of rural fires.</li>
+                <li><strong>AreaArdPov:</strong> Burnt area in forest plantations (ha).</li>
+                <li><strong>AreaArdMato:</strong> Burnt area in shrubland (ha).</li>
+                <li><strong>AreaArdAgric:</strong> Burnt area in agriculture (ha).</li>
+                <li><strong>AreaArdTotal:</strong> Total burnt area (ha).</li>
+                <li><strong>NIncRur_0_1ha to NIncRur_1000_n_ha:</strong> Fires by burnt area size (from <1 ha to ≥1000 ha).</li>
+                <li><strong>Fire Causes:</strong> Natural, negligent, intentional, reignition, undetermined, or not investigated.</li>
+                <li><strong>Ninc_Sup24h:</strong> Fires lasting more than 24 hours.</li>
+            </ul>
+            <p><strong>Available at:</strong></p>
+            <a href="https://www.icnf.pt/" target="_blank">
+                <img src="resources/images/icnf_logo.png" alt="ICNF Logo" class="sidebar-image">
+            </a>
+        </div>
+    </div>
+    
+    
+    
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="navbar-text">Data Visualization of Fire Patterns in Portugal</div>
+        <div class="navbar-links">
+            <button id="mainPageBtn" class="active">Main Page</button> <!-- This is the new "Main Page" tab -->
+            <button id="burntAreaBtn">Burnt Area</button>
+            <button id="causesBtn">Causes</button>
+            <button id="temporalAnalysisBtn">Temporal Analysis</button>
+        </div>
+        
+    </div>
+
+    <!-- Main Page -->
+    <div id="mainPageContainer" class="content-container active">
+        <div class="main-page-content">
+            <h1>Explore Fire Data in Portugal</h1>
+            <div class="text-columns">
+                <div class="column" id="burntAreaColumn">
+                    <h2>Burnt Area</h2>
+                    <p>The <strong>Burnt Area</strong> tab provides a yearly analysis of the areas affected by rural fires in Portugal...</p>
+                    <div style="background-color: rgba(0, 0, 0, 0.1); border-radius: 15px; padding: 10px; display: inline-block;">
+                        <img src="resources/images/portugal_fire.jpeg" alt="Portugal Fire Map" style="width: 100%; max-width: 400px; margin-top: 20px; border-radius: 15px; object-fit: cover;">
+                    </div>
+                </div>
+                <div class="column" id="causesColumn">
+                    <h2>Causes</h2>
+                    <p>The <strong>Causes</strong> tab provides a detailed overview of the various factors responsible for rural fires in Portugal...</p>
+                    <div style="background-color: rgba(0, 0, 0, 0.1); border-radius: 15px; padding: 10px; display: inline-block;">
+                        <img src="resources/images/portugal_fire3.jpeg" alt="Portugal Fire Map" style="width: 100%; max-width: 400px; margin-top: 20px; border-radius: 15px; object-fit: cover;">
+                    </div>
+                </div>
+                <div class="column" id="temporalAnalysisColumn">
+                    <h2>Temporal Analysis</h2>
+                    <p>The <strong>Temporal Analysis</strong> tab focuses on examining how fire activity has changed over time...</p>
+                    <div style="background-color: rgba(0, 0, 0, 0.1); border-radius: 15px; padding: 10px; display: inline-block;">
+                        <img src="resources/images/portugal_fire2.jpg" alt="Portugal Fire Map" style="width: 100%; max-width: 400px; margin-top: 20px; border-radius: 15px; object-fit: cover;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    
+
+    <!-- Burned Area Container -->
+    <div id="burnedAreaContainer" class="content-container">
+        <div class="map-container" id="map">
+            <div class="info-icon" data-tooltip="map-info">i</div>
+            <div class="info-tooltip" id="map-info">
+                <strong>Description:</strong><br>
+                This map visualizes the burnt area in each district, represented according to a color scheme. The intensity of the color corresponds to the extent of the burnt area, providing a clear view of fire activity across different regions.<br><br>
+                
+                <strong>Data Used:</strong><br>
+                - Ano (Year)<br>
+                - Distrito (District)<br>
+                - Num_IncendiosRurais (Number of Rural Fires)<br>
+                - AreaArdTotal_IncendioInicioDist (Burnt Area in District at Fire Start): For years before 2017.<br>
+                - AreaArdTotal_NoDistrito (Burnt Area in District): For years 2017 and onwards.<br><br>
+                
+                <strong>Interaction:</strong><br>
+                - Select Year: Select a specific year to visualize the data for that period.<br>
+                - Fix Colorbar Range: You can fix the color bar range, allowing the map to account for the maximum and minimum values registered across the entire period (2001-2023), making it easier to compare across years.<br>
+                - Toggle District Names: You can hide or show district names in the center of each district on the map.<br><br>
+            
+                <strong>Tooltip:</strong><br>
+                While hovering over a district, a yellow outline will highlight the district. Additionally, the table below the map will display the following details: <br>
+                - District Name<br>
+                - Area Burnt<br>
+                - Number of Fires
+            </div>
+            
+            
+            <label for="yearSelect" id="yearSelectLabel">Select Year:</label>
+            <select id="yearSelect"></select>
+            <div id="controls">
+                <label>
+                    <input type="checkbox" id="fixColorbarCheckbox"> Fix color bar range
+                </label>
+                <button id="toggleLabelsButton">Hide District Names</button>
+            </div>
+            <div id="district-info-container">
+                <table id="district-info-table">
+                    <thead>
+                        <tr>
+                            <th>District</th>
+                            <th>Area Burnt (ha)</th>
+                            <th>Number of Fires</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    
+        <div id="hists-containers">
+            <div id="histogram">
+                <div class="info-icon" data-tooltip="histogram-info">i</div>
+                <div class="info-tooltip" id="histogram-info">
+                    <strong>Description:</strong><br>
+                    This histogram displays the raw distribution of the burnt area data, with a stacked representation for each year. The stacked bars represent different land types: forest area, scrubland, and agricultural land. Each bar shows how these areas contribute to the total burnt area in a given year.<br><br>
+                    
+                    <strong>Data Used:</strong><br>
+                    - Ano (Year)<br>
+                    - Distrito (District)<br>
+                    - Burnt Area Data by Land Type:
+                    - AreaArdPov_IncendioInicioDist (Burnt Area in Forest at Fire Start): For years before 2017.<br>
+                    - AreaArdMato_IncendioInicioDist (Burnt Area in Scrubland at Fire Start): For years before 2017.<br>
+                    - AreaArdAgric_IncendioInicioDist (Burnt Area in Agricultural Land at Fire Start): For years before 2017.<br>
+                    - AreaArdPov_NoDistrito (Burnt Area in Forest): For years 2017 and onwards.<br>
+                    - AreaArdMato_NoDistrito (Burnt Area in Scrubland): For years 2017 and onwards.<br>
+                    - AreaArdAgric_NoDistrito (Burnt Area in Agricultural Land): For years 2017 and onwards.<br>
+                    
+                    <strong>Interaction:</strong><br>
+                    - Select Year: Use the year dropdown in the map container to select the desired year for the histogram data.<br><br>
+                
+                    <strong>Tooltip:</strong><br>
+                    When you hover over the bars in the histogram, the tooltip will display the following information: <br>
+                    - District Name<br>
+                    - Land Type (Forest, Scrubland, Agricultural)<br>
+                    - Burnt Area (in hectares)
+                </div>
+                
+                
+                
+            </div>
+            <div id="normalized-histogram">
+                <div class="info-icon" data-tooltip="normalized-histogram-info">i</div>
+                <div class="info-tooltip" id="normalized-histogram-info">
+                    <strong>Description:</strong><br>
+                    This histogram displays the number of fires within different area categories for each district, on a yearly basis. The categories range from small areas (0 to 1 ha) to large areas (1000 ha and above). The data is shown both in its raw form (actual number of occurrences) and normalized for easier comparison across districts.<br><br>
+                    
+                    <strong>Data Used:</strong><br>
+                    - Ano (Year)<br>
+                    - Distrito (District)<br>
+                    - NIncRur_0_1ha (Number of Fires in 0-1 ha)<br>
+                    - NIncRur_1_10ha (Number of Fires in 1-10 ha)<br>
+                    - NIncRur_10_20ha (Number of Fires in 10-20 ha)<br>
+                    - NIncRur_20_50ha (Number of Fires in 20-50 ha)<br>
+                    - NIncRur_50_100ha (Number of Fires in 50-100 ha)<br>
+                    - NIncRur_100_500ha (Number of Fires in 100-500 ha)<br>
+                    - NIncRur_500_1000ha (Number of Fires in 500-1000 ha)<br>
+                    - NIncRur_1000_n_ha (Number of Fires in 1000 ha and above)<br><br>
+                    
+                    <strong>Interaction:</strong><br>
+                    - Select Year: Use the year dropdown in the map container to select the desired year for the histogram data.<br>
+                    - Zooming the Y-Axis: Use the range slider to zoom into specific ranges and focus on particular intervals of fire counts.<br>
+                    - Normalized vs Actual Data: Toggle between the normalized stacked bar representation and the actual number of occurrences to visualize either the proportional distribution or the raw counts of fires across different area categories.<br><br>
+                
+                    <strong>Tooltip:</strong><br>
+                    - When viewing the actual number of occurrences, the tooltip will display:<br>
+                    - District Name<br>
+                    - Number of Fires in that category.<br><br>
+                    - When viewing the normalized chart, the tooltip will display:<br>
+                    - District Name<br>
+                    - Percentage of Fires in that category relative to the total for that district.
+                </div>
+                
+                
+                <label class="toggle-normalization">
+                    <input type="checkbox" id="normalizationCheckbox"> Normalized
+                </label>
+                <div class="range">
+                    <div class="range-slider">
+                        <span class="range-selected"></span>
+                    </div>
+                    <div class="range-input">
+                        <input type="range" class="min" min="0" max="1" value="0" step="0.01">
+                        <input type="range" class="max" min="0" max="1" value="1" step="0.01">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Causes Container -->
+    <div id="causesContainer" class="content-container active">
+        <div class="charts-container">
+            <div id="dotplot">
+                <div class="info-icon" data-tooltip="dotplot-info">i</div>
+                <div class="info-tooltip" id="dotplot-info">
+                    <strong>Description:</strong><br>
+                    This dot plot visualizes the distribution of various causes of fires in percentage.<br><br>
+                    <strong>Data Used:</strong><br>
+                        - Ano (Year)<br>
+                        - Distrito (District)<br>
+                        - Concelho (Council)<br>
+                        - NInc_Natural (Number of fires caused by natural causes)<br>
+                        - NInc_Negligente (Number of fires caused by negligence)<br>
+                        - NInc_Intencionais (Number of intentional fires)<br>
+                        - NInc_Reacendimentos (Number of fires due to rekindling)<br>
+                        - NInc_Desconhecida (Number of fires with unknown cause)<br>
+                        - NInc_NaoInvestigados (Number of uninvestigated fires)<br>
+                    <strong>Interaction:</strong><br>
+                    You can filter the data by year, district, and sort by cause of fire.<br><br>
+                    <strong>Tooltip:</strong><br>
+                    When you hover over the lines of points in the dotplot, the tooltip will display the following information:<br>
+                        - Type of data (Year, District, Council)<br>
+                        - The number of fires caused by each type of cause<br>
+                </div>
+    
+                <div class="filters" id="filters_dotplot">
+                    <label for="FilterTypeSelect">Select Year:</label>
+                    <select id="filterTypeSelect">
+                        <option value="Anos">Years</option>
+                        <option value="Distritos">Districts</option>
+                    </select>
+    
+                    <label for="DistSelect">Select District:</label>
+                    <select id="distritoSelect">
+                        <option value="All">All</option>
+                        <option value="Aveiro">Aveiro</option>
+                        <option value="Beja">Beja</option>
+                        <option value="Braga">Braga</option>
+                        <option value="Bragança">Bragança</option>
+                        <option value="Castelo Branco">Castelo Branco</option>
+                        <option value="Coimbra">Coimbra</option>
+                        <option value="Évora">Évora</option>
+                        <option value="Faro">Faro</option>
+                        <option value="Guarda">Guarda</option>
+                        <option value="Leiria">Leiria</option>
+                        <option value="Lisboa">Lisboa</option>
+                        <option value="Portalegre">Portalegre</option>
+                        <option value="Porto">Porto</option>
+                        <option value="Santarém">Santarém</option>
+                        <option value="Setúbal">Setúbal</option>
+                        <option value="Viana do Castelo">Viana do Castelo</option>
+                        <option value="Vila Real">Vila Real</option>
+                        <option value="Viseu">Viseu</option>
+                    </select>
+    
+                    <label for="OrderSelect">Order By:</label>
+                    <select id="orderSelect">
+                        <option value="Natural">Natural</option>
+                        <option value="Negligente">Negligent</option>
+                        <option value="Intencionais">Intentional</option>
+                        <option value="Reacendimentos">Reignitions</option>
+                        <option value="Desconhecida">Unknown</option>
+                        <option value="Não Investigados">Not Investigated</option>
+                    </select>
+                    
+                </div>
+            </div>
+    
+            <div id="spiderchart">
+                <div class="info-icon" data-tooltip="spiderchart-info">i</div>
+                <div class="info-tooltip" id="spiderchart-info">
+                    <strong>Description:</strong><br>
+                    This spiderchart allows you to compare data on the various causes of fire from different years, districts and counties.<br><br>
+                    <strong>Data Used:</strong><br>
+                    - Ano (Year)<br>
+                    - Distrito (District)<br>
+                    - Concelho (County)<br>
+                    - NInc_Natural (Number of fires caused by natural causes)<br>
+                    - NInc_Negligente (Number of fires caused by negligence)<br>
+                    - NInc_Intencionais (Number of intentional fires)<br>
+                    - NInc_Reacendimentos (Number of fires due to rekindling)<br>
+                    - NInc_Desconhecida (Number of fires with unknown cause)<br>
+                    - NInc_NaoInvestigados (Number of uninvestigated fires)<br>
+                    <strong>Interaction:</strong><br>
+                    You can filter the data by year, district, and county with a maximum of 3 selections for each.<br><br>
+                </div>
+    
+                <div class="controls">
+
+                    <button id="yearDropdownButtonCauses" class="dropdown-button">Select Years</button>
+                    <div id="yearDropdownCauses" class="dropdown-content">
+                    </div>
+                    
+                    <button id="districtDropdownButtonCauses" class="dropdown-button">Select Districts</button>
+                    <div id="districtDropdownCauses" class="dropdown-content">
+                    </div>
+
+                    <button id="councilDropdownButtonCauses" class="dropdown-button">Select Counties</button>
+                    <div id="councilDropdownCauses" class="dropdown-content">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    <!-- Temporal Analysis Container -->
+    <div id="temporalAnalysisContainer" class="content-container">
+        <div class="charts-half">
+            <div id="scatterPlot">
+                <div class="info-icon" data-tooltip="scatterplot-info">i</div>
+                <div class="info-tooltip" id="scatterplot-info">
+                    <strong>Description:</strong><br>
+                    This scatter plot visualizes the relationship between the number of fire occurrences and the total burnt area for each district over the years. The Y-axis represents the number of fires, while the X-axis shows the total burnt area. Each point on the plot corresponds to a specific district for a given year. Points representing the same district are always colored the same, allowing you to track changes over time for that district.<br><br>
+                    
+                    <strong>Data Used:</strong><br>
+                    - Ano (Year)<br>
+                    - Distrito (District)<br>
+                    - AreaArdTotal_NoDistrito (Total Burnt Area in the District: For years 2017 and onwards)<br>
+                    - AreaArdTotal_IncendioInicioDist (Total Burnt Area in the District: For years before 2017)<br>
+                    - Num_IncendiosRurais (Number of Fires)<br><br>
+                    
+                    <strong>Interaction:</strong><br>
+                    - Select Districts: Use the dropdown to select and highlight specific districts on the scatter plot.<br>
+                    - Select Years: Choose the desired years to filter the data shown in the plot.<br>
+                    - Hide/Show Points: You can toggle the visibility of non-highlighted points to focus on the selected districts.<br><br>
+                
+                    <strong>Tooltip:</strong><br>
+                    When you hover over a point on the scatter plot, the tooltip will display:<br>
+                    - District Name<br>
+                    - Year<br>
+                    - Total Number of Fires<br>
+                    - Total Burnt Area (in hectares)
+                </div>
+                
+    
+                <div class="controls">
+                    <button id="districtDropdownButton" class="dropdown-button">Select Districts</button>
+                    <div id="districtDropdown" class="dropdown-content">
+                        <input type="checkbox" id="districtAll" value="All"> All<br>
+                    </div>
+    
+                    <button id="yearDropdownButton" class="dropdown-button">Select Years</button>
+                    <div id="yearDropdown" class="dropdown-content">
+                        <input type="checkbox" id="yearAll" value="All"> All<br>
+                    </div>
+                    <button id="toggleHideButton">Hide Non-Highlighted Points</button>
+                </div>
+            </div>
+        </div>
+    
+        <div class="charts-half">
+            <div id="linePlotContainer">
+                <div class="info-icon" data-tooltip="lineplot-info">i</div>
+                <div class="info-tooltip" id="lineplot-info">
+                    <strong>Description:</strong><br>
+                    This line plot visualizes the trends over time in burnt areas for various districts. It shows the burnt area across different land categories (Forest, Scrubland, Agricultural) and the total burnt area, allowing users to observe the changes in fire data across multiple years. Each line represents a specific category, helping to compare how different types of land are affected by fires over time.<br><br>
+                    
+                    <strong>Data Used:</strong><br>
+                    - Ano (Year)<br>
+                    - Distrito (District)<br>
+                    - AreaArdPov_IncendioInicioDist (Burnt Area in Forest at Fire Start): For years before 2017.<br>
+                    - AreaArdMato_IncendioInicioDist (Burnt Area in Scrubland at Fire Start): For years before 2017.<br>
+                    - AreaArdAgric_IncendioInicioDist (Burnt Area in Agricultural Land at Fire Start): For years before 2017.<br>
+                    - AreaArdPov_NoDistrito (Burnt Area in Forest): For years 2017 and onwards.<br>
+                    - AreaArdMato_NoDistrito (Burnt Area in Scrubland): For years 2017 and onwards.<br>
+                    - AreaArdAgric_NoDistrito (Burnt Area in Agricultural Land): For years 2017 and onwards.<br>
+                    - AreaArdTotal_NoDistrito (Total Burnt Area in the District): For years 2017 and onwards.<br>
+                    - AreaArdTotal_IncendioInicioDist (Total Burnt Area in the District): For years before 2017.<br><br>
+                    
+                    <strong>Interaction:</strong><br>
+                    - Show/Hide Max/Min: Allows users to toggle the visibility of the maximum and minimum values for each category (forest, scrubland, agricultural, total).<br>
+                    - Show/Hide Line: Users can toggle the visibility of individual lines for each category to focus on specific data.<br>
+                    - Select District: Choose the district you want to observe from the dropdown to focus the analysis on that area.<br><br>
+                
+                    <strong>Tooltip:</strong><br>
+                    When you hover over a point on the line plot, the tooltip will display:<br>
+                    - District Name<br>
+                    - Year<br>
+                    - Burnt Area (in hectares)<br>
+                    - Category (Forest, Scrubland, Agricultural, Total)
+                </div>
+                
+    
+                <div class="district-select-container">
+                    <label for="districtSelect">Select Districts:</label>
+                    <select id="districtSelect" class="dropdown">
+                    </select>
+                </div>
+                <div class="year-range-dropdowns">
+                    <label for="startYearSelect">From:</label>
+                    <select id="startYearSelect"></select>
+                    <label for="endYearSelect">To:</label>
+                    <select id="endYearSelect"></select>
+                </div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="povCheckbox" checked>
+                    <label for="povCheckbox">Forest</label><br>
+                    <input type="checkbox" id="agricCheckbox" checked>
+                    <label for="agricCheckbox">Agricultural</label><br>
+                    <input type="checkbox" id="matoCheckbox" checked>
+                    <label for="matoCheckbox">Scrubland</label><br>
+                    <input type="checkbox" id="totalCheckbox" checked>
+                    <label for="totalCheckbox">Total</label>
+                    <hr>
+                    <input type="checkbox" id="highlightMaxCheckbox">
+                    <label for="highlightMaxCheckbox">Highlight Max</label><br>
+                    <input type="checkbox" id="highlightMinCheckbox">
+                    <label for="highlightMinCheckbox">Highlight Min</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+
+    <script src="resources/js/scripts.js"></script>
+</body>
+</html>

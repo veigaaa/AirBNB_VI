@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fire Dashboard Portugal</title>
+
+  <!-- Plotly global -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+  <style>
+    /* GLOBAL */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f4f4f4;
+    }
+
+    body {
+      display: flex;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 250px;
+      background: #1f1f1f;
+      color: white;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.3);
+      z-index: 10;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      padding: 20px 10px;
+      margin: 0;
+      background-color: #111;
+      font-size: 22px;
+      border-bottom: 1px solid #333;
+    }
+
+    .nav-link {
+      padding: 15px 20px;
+      cursor: pointer;
+      border-bottom: 1px solid #333;
+      font-size: 15px;
+      transition: 0.2s;
+    }
+
+    .nav-link:hover {
+      background: #2d2d2d;
+    }
+
+    .nav-link.active {
+      background: #FFA500;
+      color: #111;
+      font-weight: bold;
+    }
+
+    /* CONTENT AREA */
+    #content-area {
+      margin-left: 250px;
+      width: calc(100% - 250px);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <h2>🔥 Fire Dashboard</h2>
+
+    <div class="nav-link active" data-file="main.html">Main Page</div>
+    <div class="nav-link" data-file="dataset.html">Dataset</div>
+    <div class="nav-link" data-file="burned.html">Burned Area</div>
+
+    <!-- ✅ NOVA PÁGINA ADICIONADA -->
+    <div class="nav-link" data-file="causes.html">Causes</div>
+    <div class="nav-link" data-file="about.html">About</div>
+  </div>
+
+  <!-- CONTENT AREA -->
+  <div id="content-area">
+    <iframe id="content-frame" src="main.html"></iframe>
+  </div>
+
+  <script>
+    const frame = document.getElementById("content-frame");
+
+    document.querySelectorAll(".nav-link").forEach(link => {
+      link.addEventListener("click", () => {
+
+        // remover active dos outros
+        document.querySelectorAll(".nav-link")
+                .forEach(l => l.classList.remove("active"));
+
+        // ativar o clicado
+        link.classList.add("active");
+
+        // carregar o ficheiro correto
+        frame.src = link.dataset.file;
+      });
+    });
+  </script>
+
+</body>
+</html>

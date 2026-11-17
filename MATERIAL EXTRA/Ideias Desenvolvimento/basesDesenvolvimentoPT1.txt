@@ -1,0 +1,139 @@
+BASES DE DESENVOLVIMENTO — PARTE 1
+PROJETO: AIRBNB EXPLORER
+
+1. CONCEITO E PÚBLICO-ALVO
+
+O Airbnb Explorer é uma aplicação web de exploração visual do mercado de alojamento local em Lisboa e no Porto, a desenvolver com D3.js.
+
+O foco principal são proprietários, futuros anfitriões e potenciais investidores interessados em compreender os preços anunciados, a distribuição geográfica e a concorrência entre alojamentos comparáveis. Os turistas são um público complementar e podem consultar o mesmo dashboard, com diferenças subtis na ordem ou destaque de alguns filtros.
+
+Questão central: Como pode um proprietário compreender a concorrência e avaliar o posicionamento do seu alojamento face a anúncios com localização e características semelhantes?
+
+A plataforma não calcula rentabilidade efetiva nem prevê preços ideais; permite explorar e comparar os dados anunciados.
+
+2. FONTES DE DADOS E VARIÁVEIS PREVISTAS
+
+Fonte: Inside Airbnb (https://insideairbnb.com/get-the-data/)
+Cidades: Lisboa e Porto.
+
+Dataset listings.csv.gz — 21 variáveis:
+
+Identificação (4):
+- id — identificador do anúncio
+- name — nome do alojamento
+- listing_url — ligação para o anúncio original
+- picture_url — ligação para a imagem do anúncio
+
+Localização (3):
+- latitude
+- longitude
+- neighbourhood_cleansed — bairro
+
+Preço (1):
+- price — preço anunciado por noite na recolha
+
+Características (6):
+- room_type — alojamento inteiro/quarto, etc.
+- property_type — tipo de propriedade
+- accommodates — capacidade máxima de hóspedes
+- bedrooms — número de quartos
+- beds — número de camas
+- amenities — comodidades
+
+Disponibilidade (2):
+- minimum_nights — estadia mínima
+- availability_365 — número de dias indicados como disponíveis nos próximos 365 dias
+
+Avaliações (3):
+- number_of_reviews — total de avaliações
+- reviews_per_month — avaliações médias por mês
+- review_scores_rating — classificação geral
+
+Anfitrião (2):
+- host_is_superhost — estatuto Superhost
+- calculated_host_listings_count — número calculado de anúncios do anfitrião
+
+Dataset calendar.csv.gz — 3 variáveis adicionais:
+- listing_id — ligação ao anúncio
+- date — data do calendário
+- available — indicação de disponibilidade do anúncio nessa data
+
+TOTAL PREVISTO: 24 variáveis selecionadas (21 de listings + 3 de calendar).
+
+Variáveis derivadas possíveis após tratamento: city, price_per_guest e percentagem de anúncios disponíveis por dia, bairro e tipologia.
+
+NOTA: os ficheiros calendar.csv.gz disponíveis para este projeto não incluem a coluna price. Não permitem, portanto, observar diretamente a evolução do preço de um mesmo anúncio dia a dia. A indisponibilidade não equivale necessariamente a uma reserva confirmada.
+
+3. VIEWS / VISUALIZAÇÕES
+
+VIEW 1 — MAPA INTERATIVO DE CONCORRÊNCIA
+- Distribuição geográfica dos alojamentos de Lisboa ou Porto.
+- Possibilidade de selecionar bairros e anúncios e de aplicar filtros.
+- Pergunta: Onde se concentram os alojamentos concorrentes?
+- Evolução possível: alternar pontos individuais com um mapa de densidade.
+
+VIEW 2 — DISTRIBUIÇÃO DOS PREÇOS POR BAIRRO
+- Versão inicial: gráfico de barras horizontais com o preço mediano por bairro.
+- Evolução proposta: box plot por bairro para mostrar mediana, dispersão, quartis e valores atípicos.
+- Pergunta: Como se distribuem e diferenciam os preços entre bairros e imóveis semelhantes?
+
+VIEW 3 — SCATTER PLOT MULTIDIMENSIONAL
+- Eixo Y: preço por noite.
+- Eixo X selecionável: capacidade, quartos ou classificação.
+- Cor possível: tipo de alojamento; tamanho possível: número de avaliações.
+- Cada ponto representa um anúncio; seleção de pontos e tooltips para explorar detalhes.
+- Pergunta: Que características estão associadas a preços mais elevados ou mais baixos?
+
+VIEW 4 — CALENDAR HEATMAP
+- Calendário em que cada dia é representado por uma cor associada à percentagem de alojamentos disponíveis.
+- Pode responder aos filtros de bairro, tipologia, quartos e capacidade, desde que os dados sejam preparados para essas dimensões.
+- Pergunta: Como varia a disponibilidade anunciada da concorrência ao longo do calendário?
+- Limitação: não permite mostrar preços diários com o calendar.csv.gz atualmente disponível.
+
+VIEW 5 — HISTOGRAMA COMPARATIVO (COMPLEMENTAR)
+- Integrado na funcionalidade «Comparar o meu imóvel».
+- O proprietário introduz bairro, tipo de alojamento, quartos, capacidade e, opcionalmente, o preço que pretende praticar.
+- A aplicação mostra a distribuição dos preços anunciados de alojamentos semelhantes, incluindo uma linha vertical que marca o preço pretendido.
+- Pergunta: Onde se posiciona o preço do meu imóvel face aos anúncios comparáveis?
+
+4. ESTADO DAS DECISÕES
+
+Já definidas para a apresentação/protótipo inicial:
+- Mapa interativo de alojamentos.
+- Gráfico de barras horizontais com preços por bairro.
+- Scatter plot de preço vs. características.
+
+Evoluções discutidas, ainda sujeitas à viabilidade da implementação:
+- Mapa de densidade como alternativa ou modo adicional do mapa.
+- Box plot em substituição ou complemento às barras.
+- Calendar Heatmap de disponibilidade diária.
+- Histograma para a comparação personalizada do imóvel.
+
+Recomendação atual: quatro views principais (mapa, box plot, scatter plot e calendar heatmap), mais o histograma complementar de comparação. A escolha final deverá considerar o tempo de desenvolvimento e a qualidade da interatividade.
+
+5. FUNCIONAMENTO PREVISTO DA WEB APP
+
+- Página inicial com seleção de Lisboa/Porto e do objetivo «Procurar» ou «Anunciar».
+- Dashboard essencialmente igual para ambos os objetivos.
+- Distinção subtil: no modo Procurar podem destacar-se orçamento, capacidade e avaliação; no modo Anunciar, comparação de concorrentes, tipologia, quartos e capacidade.
+- Filtros por cidade, bairro, tipo de alojamento, quartos, capacidade e preço; opções adicionais para avaliação e Superhost.
+- Opção de limpar filtros e ordenar a lista de anúncios por preço.
+- Mapa, gráficos, indicadores e lista de anúncios interligados por seleções e filtros (cross-filtering).
+- Painel com os detalhes de um alojamento.
+- Comparação de anúncios e funcionalidade «Comparar o meu imóvel».
+- Possibilidade de analisar disponibilidade por data ou período, caso a implementação permita esse filtro.
+
+6. PLANO DE DADOS E IMPLEMENTAÇÃO
+
+- Preservar os ficheiros originais do Inside Airbnb.
+- Preparar com Python/Pandas um dataset de anúncios limpo e reduzido às variáveis úteis.
+- Converter preços para valores numéricos, tratar valores em falta e documentar regras de exclusão de registos inválidos.
+- Agregar os milhões de registos do calendário para evitar carregá-los diretamente em D3.js.
+- Conservar as dimensões necessárias aos filtros da análise temporal.
+- Usar os ficheiros GeoJSON de bairros, se for útil desenhar limites geográficos.
+- Implementar primeiro o dashboard partilhado e as três views centrais; acrescentar as evoluções se houver tempo.
+- Testar as tarefas principais e melhorar a interface a partir das observações dos utilizadores.
+
+7. IDEIA-CHAVE
+
+A aplicação deve permitir passar de uma visão geral do mercado à identificação de concorrentes comparáveis, para que um proprietário compreenda melhor a oferta e o posicionamento do seu alojamento. A utilidade vem da exploração visual coordenada, não apenas da apresentação de gráficos isolados.

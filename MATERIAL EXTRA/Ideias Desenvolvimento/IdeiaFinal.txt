@@ -1,0 +1,80 @@
+AIRBNB EXPLORER — IDEIA FINAL (VERSÃO DE TRABALHO)
+Projeto de Information Visualisation | 2026/2027 | Primeira iteração
+
+1. CONCEITO E FOCO PRINCIPAL
+Criar uma aplicação web de exploração visual do mercado de alojamento local em Lisboa e no Porto, com recurso a dados públicos do Inside Airbnb. A aplicação permite encontrar, explorar e comparar anúncios e compreender a distribuição geográfica dos alojamentos, os preços anunciados e as características da oferta.
+
+O foco principal não é fazer reservas nem publicar anúncios: é a exploração visual dos dados para apoiar a compreensão do mercado e a comparação de opções. A ideia nasceu do problema de um proprietário/gestor que pretende perceber como se posiciona um imóvel face a alojamentos semelhantes. A aplicação serve também quem procura alojamento, mas mantém um dashboard único para os dois objetivos.
+
+2. PROBLEMA QUE QUEREMOS RESOLVER
+Os dados do alojamento local são extensos e difíceis de interpretar em formato de tabela. É pouco intuitivo perceber onde estão os imóveis, como variam os preços entre bairros e tipologias e como comparar alojamentos semelhantes. O Airbnb Explorer organiza estes dados numa interface com mapa, lista de anúncios, gráficos e filtros interligados.
+
+3. PÚBLICO-ALVO E CONTEXTOS DE USO
+A) Quem procura alojamento: quer explorar zonas, comparar anúncios por preço, capacidade, tipologia e avaliações e identificar opções a investigar melhor.
+B) Quem pretende anunciar um alojamento (proprietário ou gestor): quer explorar concorrentes e comparar o preço que pondera praticar com preços anunciados de imóveis semelhantes.
+
+A seleção 'Procurar' / 'Anunciar' indica o objetivo de exploração, não um tipo de conta. Não é necessário login. Ambos os utilizadores acedem à mesma informação e às mesmas visualizações.
+
+4. DISTINÇÕES SUBTIS ENTRE OS DOIS OBJETIVOS
+O dashboard é essencialmente o mesmo: mapa interativo, lista de anúncios, indicadores, gráficos, filtros e comparação de imóveis.
+No modo Procurar: maior destaque para preço máximo, avaliação mínima, capacidade e ordenação de anúncios por preço. Os cartões salientam preço, avaliação e capacidade.
+No modo Anunciar: maior destaque para tipologia, bairro, quartos, capacidade, critérios de imóveis comparáveis e botão 'Comparar o meu imóvel'. Os cartões salientam características comparáveis e preço.
+Os filtros não são exclusivos de nenhum modo: altera-se sobretudo a ordem, as sugestões e os destaques. A pessoa pode mudar de objetivo no cabeçalho sem perder a navegação.
+
+5. PERGUNTAS QUE A APLICAÇÃO DEVE AJUDAR A RESPONDER
+- Onde se concentram os anúncios Airbnb na cidade?
+- Quais os bairros com preços anunciados medianos mais altos ou mais baixos?
+- Quanto variam os preços dentro do mesmo bairro e entre tipologias?
+- Como varia o preço segundo quartos, capacidade e classificação?
+- Que anúncios correspondem a um conjunto de filtros (bairro, tipo, orçamento, quartos etc.)?
+- Que diferenças existem entre dois ou três anúncios selecionados?
+- Para um imóvel descrito pelo utilizador, como se compara o preço pretendido com a distribuição dos preços de anúncios semelhantes?
+
+6. DADOS E PREPARAÇÃO
+Fonte principal: Inside Airbnb (https://insideairbnb.com/get-the-data/), para Lisboa e Porto. Ficheiro principal: listings.csv.gz. Dados complementares como calendar.csv.gz e reviews.csv.gz podem ficar para uma evolução posterior, caso acrescentem valor justificável.
+Features prioritárias: id, name, listing_url, latitude, longitude, neighbourhood_cleansed, room_type, property_type, price, accommodates, bedrooms, beds, review_scores_rating, number_of_reviews, minimum_nights, host_is_superhost, calculated_host_listings_count e, se necessário, amenities e picture_url.
+Será criado um ficheiro tratado (CSV ou JSON), a partir dos ficheiros originais: selecionar colunas, converter preços para números, gerir valores em falta, validar coordenadas, harmonizar categorias e preparar dados por cidade. Guardar os originais e documentar as transformações. Procurar limitar o tamanho do ficheiro final, dado que o objetivo é visualização e não engenharia de dados.
+Limitações: os preços são preços anunciados no momento da recolha; disponibilidade não é prova de reserva; não se dispõe de receitas, ocupação real ou disponibilidade em tempo real. A aplicação não deve prometer reservar, anunciar ou recomendar um preço ótimo garantido.
+
+7. FUNCIONAMENTO PREVISTO
+Página inicial: nome, objetivo da aplicação, escolha Lisboa/Porto, escolha Procurar/Anunciar e botão 'Explorar'.
+Dashboard comum: cabeçalho com cidade e objetivo alteráveis; filtros por bairro, tipo de alojamento, quartos e preço; 'Mais filtros' (capacidade, avaliação, Superhost e outros pertinentes); 'Limpar filtros'; cartões-resumo; mapa interativo; lista de anúncios ordenável por preço; gráficos interativos.
+Detalhes: clicar num anúncio da lista ou num ponto do mapa abre painel lateral com informações do imóvel, mantendo filtros ativos.
+Comparação de anúncios: selecionar dois ou três imóveis e ver preço, quartos, capacidade e avaliações lado a lado.
+Comparar o meu imóvel: indicar bairro, tipo, quartos, capacidade e preço pretendido (opcional); encontrar anúncios comparáveis e mostrar a distribuição de preços com a referência do preço introduzido. Esta função recebe maior destaque em Anunciar, mas pode estar acessível a todos.
+
+8. TRÊS VISUALIZAÇÕES PRINCIPAIS
+1) Mapa geográfico interativo: distribuição dos anúncios; seleção de pontos/bairros e ligação à lista.
+2) Gráfico de barras: comparação do preço mediano anunciado entre bairros; opção de ordenar e destacar bairro selecionado.
+3) Gráfico de dispersão: explorar a relação entre preço e características como capacidade, quartos ou avaliação; seleção e detalhes.
+Na comparação personalizada, pode surgir um histograma adicional da distribuição de preços de imóveis semelhantes. A lista de anúncios, KPIs e painel lateral complementam as visualizações, mas não as substituem.
+Interatividade-chave: filtros sincronizados (cross-filtering), hover/detalhes, seleção, ordenação, limpar filtros e manutenção de contexto. Se não houver resultados, mostrar mensagem clara.
+
+9. PROTÓTIPO DE BAIXA FIDELIDADE EM PAPEL — JÁ DESENHADO
+Folha 1: página inicial com cidade e objetivo.
+Folha 2: dashboard geral com filtros, KPIs, mapa, anúncios e gráficos.
+Folha 3: dashboard filtrado (exemplo Lisboa/Arroios, alojamento inteiro, 1 quarto, até 120 €).
+Folha 4: painel lateral com detalhes de um alojamento.
+Folha 5: comparação entre anúncios e configuração do próprio imóvel, com recortes para estados alternativos.
+Usar pequenos recortes para menus e resultados; um membro do grupo simula as ações trocando folhas/recortes. Os valores dos desenhos são fictícios, para testar a interface, e não resultados da análise.
+
+10. TESTES DE USABILIDADE — PRIMEIRA ITERAÇÃO
+Testar com colegas, idealmente 3 a 5 participantes se houver disponibilidade. Um membro modera e manipula o protótipo; outro observa e anota. Não ensinar previamente onde clicar. Registar realização da tarefa, dificuldades, comentários e sugestões.
+Tarefas propostas:
+1) Escolher Lisboa e o objetivo Procurar; aceder ao mapa.
+2) Filtrar alojamento inteiro em Arroios, um quarto, até 120 €.
+3) Selecionar dois anúncios e comparar preço, capacidade e avaliação.
+4) No objetivo Anunciar, configurar um T1 em Arroios para duas pessoas com preço pretendido de 100 € e interpretar a posição face aos imóveis comparáveis.
+Após os testes, resumir problemas observados e melhorias para a segunda iteração. Não apresentar dificuldades hipotéticas como resultados reais.
+
+11. PLANO DA IMPLEMENTAÇÃO E AVALIAÇÃO
+Primeira iteração (26 de outubro de 2026): definir problema, público, perguntas, dados, três visualizações justificadas, protótipo em papel e tarefas de teste; apresentação inferior a cinco minutos e avaliação do protótipo com colegas.
+Segunda iteração: incorporar feedback; preparar o dataset tratado; implementar a aplicação web com visualizações em D3.js; realizar avaliação heurística e novos testes de usabilidade; documentar decisões e limitações.
+Apresentação final prevista no enunciado para 30 de novembro de 2026; confirmar com o docente a inconsistência da data escrita na secção de entrega. O enunciado pede ainda slides, pequeno vídeo, código, instruções de execução e declaração explícita de utilização de IA, caso utilizada.
+
+12. PRIORIDADES E LIMITAÇÃO DO ÂMBITO
+Implementar primeiro: seleção Lisboa/Porto, escolha subtil de objetivo, dashboard partilhado, filtros e limpeza, mapa, lista ordenável, três gráficos, detalhes e comparação simples.
+Se houver tempo: comparação personalizada com distribuição de preços, filtros extra e melhorias de acessibilidade/usabilidade.
+Fora do âmbito inicial: login, sistema de reservas, publicação real de anúncios, cálculo de rentabilidade, integração obrigatória de atrações turísticas ou outras fontes externas.
+
+ESTADO ATUAL: conceito e cinco folhas do protótipo em papel definidos. Próximos passos: rever consistência, testar com utilizadores, preparar slides e registar melhorias.

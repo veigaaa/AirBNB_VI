@@ -1,0 +1,64 @@
+AIRBNB EXPLORER — A NOSSA IDEIA
+
+1. QUAL É O TEMA DO PROJETO?
+
+O Airbnb Explorer é uma aplicação web interativa para explorar e analisar o mercado de alojamento local em Lisboa e no Porto, utilizando dados reais do Inside Airbnb.
+
+A nossa ideia surgiu de um problema:
+
+Uma pessoa que pretende investir num apartamento para alojamento local pode ter dificuldade em perceber onde existe mais concorrência, quais os preços praticados e como se posicionam imóveis semelhantes.
+
+Queremos transformar milhares de anúncios Airbnb numa aplicação visual que facilite essa análise.
+
+O utilizador poderá explorar o mercado geograficamente, analisar preços, filtrar anúncios e comparar imóveis.
+
+O nosso foco é a análise da concorrência no mercado de alojamento local.
+
+
+2. A NOSSA PERSONA — CHARLES
+
+A persona que definimos no PowerPoint é o Charles.
+
+Charles, 59 anos
+Potencial investidor imobiliário
+Persona fictícia
+
+Charles pretende comprar um apartamento para o colocar no mercado de alojamento local.
+
+Tem pouca experiência neste mercado e quer compreender melhor a concorrência antes de tomar uma decisão.
+
+O QUE CHARLES PROCURA?
+
+Imaginemos que Charles está interessado em comprar um T1 em Arroios, Lisboa.
+
+Ele quer saber:
+
+- Quantos alojamentos Airbnb existem em Arroios?
+- Qual é o preço habitual por noite?
+- Existem muitos apartamentos semelhantes ao que pretende comprar?
+- Como variam os preços entre Arroios, Avenidas Novas e outras freguesias?
+- Que características apresentam os imóveis mais caros?
+- Como se posicionaria um apartamento com as características do seu?
+
+A aplicação deve ajudá-lo a responder a estas perguntas.
+
+Não pretendemos dizer-lhe se deve comprar determinado imóvel. Queremos fornecer informação visual que o ajude a compreender o mercado.
+
+
+3. O NOSSO OBJETIVO PRINCIPAL
+
+Permitir que um potencial investidor explore a concorrência e compare os preços de alojamentos locais, tendo em conta a localização e as características dos imóveis.
+
+Dividimos esse objetivo em quatro partes:
+
+EXPLORAÇÃO GEOGRÁFICA
+Descobrir onde estão concentrados os alojamentos e selecionar freguesias ou regiões.
+
+ANÁLISE DE PREÇOS
+Compreender a distribuição dos preços por noite e as diferenças entre zonas.
+
+FILTRAGEM DE CONCORRENTES
+Encontrar alojamentos que correspondem a características específicas.
+
+COMPARAÇÃO DE IMÓVEIS
+Perceber como se posicionam os anúncios relativamente a outros semelhantes.

@@ -1,0 +1,55 @@
+<!-- DATASET PAGE -->
+<div id="dataset" class="page active">
+  <h1>Dataset</h1>
+
+  <label><b>Select year:</b></label>
+  <select id="dataset-year"></select>
+
+  <div id="dataset-table"></div>
+</div>
+
+<script>
+console.log("dataset.html loaded");
+
+let dfMap = [];
+let anos = [];
+
+async function loadDataset() {
+  let raw = await (await fetch("incendios_all.json")).json();
+dfMap = raw["Estatisticas_Distrito"];
+  anos = [...new Set(dfMap.map(r => r.Ano))].sort((a,b)=>a-b);
+
+  initDatasetSelector();
+  updateTable();
+}
+
+function initDatasetSelector() {
+  const sel=document.getElementById("dataset-year");
+  anos.forEach(a=>{
+    const o=document.createElement("option");
+    o.value=a; 
+    o.textContent=a;
+    sel.appendChild(o);
+  });
+
+  sel.onchange = updateTable;
+}
+
+function updateTable() {
+  const y = Number(document.getElementById("dataset-year").value);
+  const rows = dfMap.filter(r => r.Ano === y);
+  if (!rows.length) return;
+
+  const cols = Object.keys(rows[0]);
+
+  let html = "<table><tr>" + cols.map(c => `<th>${c}</th>`).join("") + "</tr>";
+  html += rows.map(r =>
+    "<tr>" + cols.map(c => `<td>${r[c]}</td>`).join("") + "</tr>"
+  ).join("");
+  html += "</table>";
+
+  document.getElementById("dataset-table").innerHTML = html;
+}
+
+loadDataset();
+</script>

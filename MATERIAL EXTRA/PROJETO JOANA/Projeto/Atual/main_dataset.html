@@ -1,0 +1,344 @@
+<!-- MAIN PAGE -->
+<div id="main" class="page active">
+  <h1>Main Page</h1>
+
+  <div class="main-layout">
+
+    <!-- MAPA -->
+    <div class="left-map">
+      <label><b>Select year:</b></label>
+      <select id="main-year"></select>
+      <div id="main-map" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- COLUNA DIREITA -->
+    <div class="right-column">
+
+      <div class="chart-box">
+        <div id="chart-total-fires" style="height:240px;"></div>
+      </div>
+
+      <div class="dual">
+        <div class="chart-box small-chart">
+          <div id="chart-burned-area" style="height:220px;"></div>
+        </div>
+
+        <div class="chart-box small-chart">
+          <div id="chart-causes" style="height:220px;"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- DATASET PAGE -->
+<div id="dataset" class="page">
+  <h1>Dataset</h1>
+
+  <label><b>Select year:</b></label>
+  <select id="dataset-year"></select>
+
+  <div id="dataset-table"></div>
+</div>
+
+<script>
+console.log("main_dataset.html loaded");
+
+let dfMap = [];
+let gdfJson = null;
+let anos = [];
+
+/* CORRIGE A NAVEGAÇÃO INTERNA */
+document.querySelectorAll(".nav-link").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const hash = btn.dataset.file.split("#")[1];
+    if (hash === "dataset") {
+      showPage("dataset");
+    } else {
+      showPage("main");
+    }
+  });
+});
+
+function showPage(id) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  const page = document.getElementById(id);
+  if (page) page.classList.add("active");
+}
+
+/* =============================== */
+/*        LOAD DATA               */
+/* =============================== */
+
+async function loadData() {
+  let raw = await (await fetch("incendios_all.json")).json();
+  dfMap = raw["Estatisticas_Distrito"];
+  gdfJson = await (await fetch("distritos_simplificados.geojson")).json();
+  anos = [...new Set(dfMap.map(r => r.Ano))].sort((a,b)=>a-b);
+
+  initDataset();
+  initMainYearSelector();
+  updateDashboard();
+}
+
+/* =============================== */
+/*             MAP                 */
+/* =============================== */
+
+function drawMap() {
+  const year = Number(document.getElementById("main-year").value);
+  const dataYear = dfMap.filter(r => r.Ano === year);
+
+  const sum = {};
+  dataYear.forEach(r => {
+    const k = r.Distrito.trim().toLowerCase();
+    sum[k] = (sum[k] || 0) + Number(r.Num_IncendiosRurais || 0);
+  });
+
+  const distritos = Object.keys(sum);
+  const valores = Object.values(sum);
+
+  const centers = {
+    "évora": { lon: -7.8913, lat: 38.6611 },
+    "aveiro": { lon: -8.5377, lat: 40.7318 },
+    "beja": { lon: -7.9237, lat: 37.8624 },
+    "braga": { lon: -8.2908, lat: 41.5264 },
+    "bragança": { lon: -6.8475, lat: 41.5276 },
+    "castelo branco": { lon: -7.6348, lat: 39.9759 },
+    "coimbra": { lon: -8.2482, lat: 40.1632 },
+    "faro": { lon: -8.6312, lat: 37.1857 },
+    "guarda": { lon: -7.3069, lat: 40.6398 },
+    "leiria": { lon: -8.7785, lat: 39.6918 },
+    "lisboa": { lon: -9.3641, lat: 38.802 },
+    "portalegre": { lon: -7.6137, lat: 39.1288 },
+    "porto": { lon: -8.4172, lat: 41.2239 },
+    "santarém": { lon: -8.5138, lat: 39.2212 },
+    "setúbal": { lon: -8.8777, lat: 38.3332 },
+    "viana do castelo": { lon: -8.4957, lat: 41.8473 },
+    "vila real": { lon: -7.6618, lat: 41.5674 },
+    "viseu": { lon: -7.8405, lat: 40.8409 }
+  };
+
+  function splitName(name) {
+    const p = name.split(" ");
+    if (p.length <= 2) return p.join("<br>");
+    const mid = Math.ceil(p.length/2);
+    return p.slice(0, mid).join(" ") + "<br>" + p.slice(mid).join(" ");
+  }
+
+  const labelLon = [];
+  const labelLat = [];
+  const labelText = [];
+
+  distritos.forEach(name => {
+    if (centers[name]) {
+      labelLon.push(centers[name].lon);
+      labelLat.push(centers[name].lat);
+      labelText.push(splitName(name));
+    }
+  });
+
+  const base = {
+    type: "choropleth",
+    geojson: gdfJson,
+    locations: distritos,
+    z: valores,
+    featureidkey: "properties.NAME_1",
+    colorscale: "Reds",
+    marker: { line: { width: 0.5, color: "#333" } },
+    hoverinfo: "skip"
+  };
+
+  const highlight = {
+    type: "choropleth",
+    geojson: gdfJson,
+    locations: distritos,
+    z: Array(distritos.length).fill(0),
+    featureidkey: "properties.NAME_1",
+    colorscale: [[0,"rgba(0,0,0,0)"],[1,"rgba(0,0,0,0)"]],
+    marker: { line: { width: 0, color: "transparent" } },
+    showscale: false,
+    hovertemplate:
+      "<b>%{location}</b><br>Total fires: %{customdata}<extra></extra>",
+    customdata: valores
+  };
+
+  const labels = {
+    type: "scattergeo",
+    lon: labelLon,
+    lat: labelLat,
+    text: labelText,
+    mode: "text",
+    textfont: { size: 9, color: "#111" },
+    hoverinfo: "skip"
+  };
+
+  const layout = {
+    geo: {
+      fitbounds: "locations",
+      projection: { type: "mercator" },
+      showcountries: false,
+      showland: true,
+      landcolor: "#eeeeee"
+    },
+    margin: { t:0, r:0, l:0, b:0 }
+  };
+
+  Plotly.newPlot("main-map", [base, highlight, labels], layout)
+    .then(gd => {
+      gd.on("plotly_hover", ev => {
+        const i = ev.points[0].pointIndex;
+        const widths = distritos.map((_,idx)=> idx===i ? 3 : 0);
+        const colors = widths.map(w => w ? "yellow" : "transparent");
+
+        Plotly.restyle(gd,{
+          "marker.line.width":[widths],
+          "marker.line.color":[colors]
+        },[1]);
+      });
+
+      gd.on("plotly_unhover", () => {
+        Plotly.restyle(gd,{
+          "marker.line.width":0,
+          "marker.line.color":"transparent"
+        },[1]);
+      });
+    });
+}
+
+/* =============================== */
+/* TOTAL FIRES */
+/* =============================== */
+
+function drawTotal() {
+  const totals = anos.map(y =>
+    dfMap.filter(r => r.Ano === y)
+         .reduce((a,b)=>a+(+b.Num_IncendiosRurais||0),0)
+  );
+
+  Plotly.newPlot("chart-total-fires", [{
+    x: anos,
+    y: totals,
+    mode: "lines+markers",
+    line: { color: "#0050a8", width: 2 }
+  }], {
+    title: { text:"Total Fires in Mainland Portugal", x:0.02 },
+    margin: { t:50, r:20, l:40, b:40 }
+  });
+}
+
+/* =============================== */
+/* BURNED AREA */
+/* =============================== */
+
+function drawBurned() {
+  const year = Number(document.getElementById("main-year").value);
+  const dataYear = dfMap.filter(r => r.Ano === year);
+
+  let f=0,s=0,a=0;
+  dataYear.forEach(r => {
+    f += +r.AreaArdPov_NoDistrito || 0;
+    s += +r.AreaArdMato_NoDistrito || 0;
+    a += +r.AreaArdAgric_NoDistrito|| 0;
+  });
+
+  Plotly.newPlot("chart-burned-area", [{
+    x:["Forest","Scrubland","Agricultural"],
+    y:[f,s,a],
+    type:"bar",
+    marker:{color:["#800","orange","#c9a000"]}
+  }], {
+    title:{ text:"Burned Area by Fire Type", x:0.02 },
+    margin:{ t:50, r:20, l:40, b:40 }
+  });
+}
+
+/* =============================== */
+/* FIRE CAUSES */
+/* =============================== */
+
+function drawCauses() {
+  const year = Number(document.getElementById("main-year").value);
+  const dataYear = dfMap.filter(r => r.Ano === year);
+
+  const totals = {
+    n:0, ne:0, i:0, r:0, u:0, ni:0
+  };
+
+  dataYear.forEach(r => {
+    totals.n  += +r.NInc_Natural        ||0;
+    totals.ne += +r.NInc_Negligente     ||0;
+    totals.i  += +r.NInc_Intencionais   ||0;
+    totals.r  += +r.NInc_Reacendimentos ||0;
+    totals.u  += +r.NInc_Desconhecida   ||0;
+    totals.ni += +r.NInc_NaoInvestigados||0;
+  });
+
+  Plotly.newPlot("chart-causes", [{
+    type:"scatterpolar",
+    r:Object.values(totals),
+    theta:["Natural","Negligent","Intentional","Rekindle","Unknown","Not Investigated"],
+    fill:"toself",
+    line:{ color:"#0050a8", width:2 }
+  }], {
+    title:{ text:"Fire Causes", x:0.02 },
+    margin:{ t:50, r:10, l:10, b:10 },
+    polar:{ radialaxis:{visible:true} },
+    showlegend:false
+  });
+}
+
+/* =============================== */
+/* SELECTORS */
+/* =============================== */
+
+function initMainYearSelector() {
+  const sel = document.getElementById("main-year");
+  anos.forEach(a => {
+    const opt = document.createElement("option");
+    opt.value = a;
+    opt.textContent = a;
+    sel.appendChild(opt);
+  });
+
+  sel.onchange = updateDashboard;
+}
+
+function updateDashboard() {
+  drawMap();
+  drawTotal();
+  drawBurned();
+  drawCauses();
+}
+
+function initDataset() {
+  const sel=document.getElementById("dataset-year");
+  anos.forEach(a=>{
+    const o=document.createElement("option");
+    o.value=a;o.textContent=a;
+    sel.appendChild(o);
+  });
+
+  sel.onchange=updateTable;
+  updateTable();
+}
+
+function updateTable() {
+  const y=+document.getElementById("dataset-year").value;
+  const rows=dfMap.filter(r=>r.Ano===y);
+  if(!rows.length)return;
+
+  const cols=Object.keys(rows[0]);
+
+  let html="<table><tr>"+cols.map(c=>`<th>${c}</th>`).join("")+"</tr>";
+  html+=rows.map(r =>
+    "<tr>"+cols.map(c => `<td>${r[c]}</td>`).join("")+"</tr>"
+  ).join("");
+  html+="</table>";
+
+  document.getElementById("dataset-table").innerHTML=html;
+}
+
+loadData();
+</script>

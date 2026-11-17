@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.9">
+    <title>Fire Causes – Portugal</title>
+
+    <!-- Libraries -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+    <!-- Optional: global CSS -->
+    <link rel="stylesheet" href="resources/css/styles.css">
+
+    <style>
+      /* ============================
+           MAIN LAYOUT
+      ============================ */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #f4f4f4;
+      }
+
+      #causesContainer {
+        width: 100%;
+        padding: 12px 20px;
+        box-sizing: border-box;
+      }
+
+      .causes-layout {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 20px;
+        height: calc(100vh - 30px);
+      }
+
+      /* ============================
+           PANELS
+      ============================ */
+      .causes-panel {
+        background: #e0e0e0;
+        border-radius: 10px;
+        padding: 12px;
+        position: relative;
+        overflow: visible !important
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .panel-title {
+        font-weight: 600;
+        margin: 0 0 8px 0;
+      }
+
+      /* ============================
+           DOTPLOT
+      ============================ */
+      #dotplot {
+        flex: 1;
+        width: 100%;
+      }
+
+      #filters_dotplot {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+        font-size: 13px;
+      }
+
+      #filters_dotplot label {
+        font-weight: 600;
+      }
+
+      #filters_dotplot select {
+        padding: 3px 5px;
+        font-size: 13px;
+      }
+
+      /* ============================
+           SPIDER CHART
+      ============================ */
+      #spiderchart {
+    flex: 1;
+    width: 100%;
+    min-height: 480px;          /* ← altura mínima obrigatória */
+    height: 100%;               /* ← deixa o flex preencher */
+    overflow: visible !important; /* ← impede corte interno do plot */
+    position: relative;
+}
+
+      .controls {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 10px;
+        font-size: 13px;
+      }
+
+      .dropdown-button {
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        background: #ffffff;
+        border: 1px solid #555;
+        font-size: 13px;
+      }
+
+      .dropdown-content {
+        display: none;
+        background: #ffffff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 6px 8px;
+        max-height: 220px;
+        overflow-y: auto;
+        margin-top: 4px;
+        font-size: 13px;
+        z-index: 5;
+      }
+
+      .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+
+      .dropdown-item input {
+        cursor: pointer;
+      }
+
+      /* ============================
+           INFO ICONS
+      ============================ */
+      .info-icon {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        border: 1px solid #555;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .info-tooltip {
+        display: none;
+        position: absolute;
+        top: 30px;
+        right: 10px;
+        width: 240px;
+        background: white;
+        padding: 10px;
+        font-size: 12px;
+        border-radius: 6px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        z-index: 20;
+      }
+
+      .info-icon:hover + .info-tooltip {
+        display: block;
+      }
+    </style>
+</head>
+
+<body>
+
+<div id="causesContainer" class="content-container active">
+
+  <div class="causes-layout">
+
+    <!-- ============================
+         COLUMN 1 — DOTPLOT
+    ============================ -->
+    <section class="causes-panel">
+
+      <h2 class="panel-title">Dot Plot – Fire Causes</h2>
+
+      <div class="info-icon" data-tooltip="dotplot-info">i</div>
+      <div id="dotplot-info" class="info-tooltip">
+        This dot plot shows the percentage distribution of fire causes.<br><br>
+        <b>View: Years</b> – each row is a year (you can filter to a single district).<br>
+        <b>View: Districts</b> – each row is a district for the selected year.<br>
+        Rows are ordered by the cause selected in <i>Order by</i>.
+      </div>
+
+      <div id="filters_dotplot">
+        <label for="filterTypeSelect">View:</label>
+        <select id="filterTypeSelect">
+          <option value="Years">Years</option>
+          <option value="Districts">Districts</option>
+        </select>
+
+        <label for="districtSelect">District:</label>
+        <select id="districtSelect">
+          <option value="All">All</option>
+          <option value="Aveiro">Aveiro</option>
+          <option value="Beja">Beja</option>
+          <option value="Braga">Braga</option>
+          <option value="Bragança">Bragança</option>
+          <option value="Castelo Branco">Castelo Branco</option>
+          <option value="Coimbra">Coimbra</option>
+          <option value="Évora">Évora</option>
+          <option value="Faro">Faro</option>
+          <option value="Guarda">Guarda</option>
+          <option value="Leiria">Leiria</option>
+          <option value="Lisboa">Lisboa</option>
+          <option value="Portalegre">Portalegre</option>
+          <option value="Porto">Porto</option>
+          <option value="Santarém">Santarém</option>
+          <option value="Setúbal">Setúbal</option>
+          <option value="Viana do Castelo">Viana do Castelo</option>
+          <option value="Vila Real">Vila Real</option>
+          <option value="Viseu">Viseu</option>
+        </select>
+
+        <!-- Year selector only used when View = "Districts" -->
+        <label for="yearSelect" id="yearSelectLabel" style="display:none;">Year:</label>
+        <select id="yearSelect" style="display:none;"></select>
+
+        <label for="orderSelect">Order by:</label>
+        <select id="orderSelect">
+          <option value="NInc_Natural">Natural</option>
+          <option value="NInc_Negligente">Negligent</option>
+          <option value="NInc_Intencionais">Intentional</option>
+          <option value="NInc_Reacendimentos">Reignitions</option>
+          <option value="NInc_Desconhecida">Unknown</option>
+          <option value="NInc_NaoInvestigados">Not Investigated</option>
+        </select>
+      </div>
+
+      <div id="dotplot"></div>
+    </section>
+
+    <!-- ============================
+         COLUMN 2 — SPIDER CHART
+    ============================ -->
+    <section class="causes-panel">
+
+      <h2 class="panel-title">Spider Chart – Fire Causes</h2>
+
+      <div class="info-icon" data-tooltip="spiderchart-info">i</div>
+      <div id="spiderchart-info" class="info-tooltip">
+        Radar chart comparing fire cause percentages.<br><br>
+        <b>Selection:</b><br>
+        – You can select one or more years;<br>
+        – And/or one or more districts.<br><br>
+        If both years and districts are selected, each line represents a
+        specific <b>Year–District</b> combination.
+      </div>
+
+      <div class="controls">
+        <div>
+          <button id="yearDropdownButtonCauses" class="dropdown-button">Select years</button>
+          <div id="yearDropdownCauses" class="dropdown-content"></div>
+        </div>
+
+        <div>
+          <button id="districtDropdownButtonCauses" class="dropdown-button">Select districts</button>
+          <div id="districtDropdownCauses" class="dropdown-content"></div>
+        </div>
+      </div>
+
+      <div id="spiderchart"></div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  // ============================
+  // GLOBAL DATA
+  // ============================
+  let dfConcelho = [];
+  let years = [];
+  let districts = [];
+
+  const causeDefs = [
+    { key: "NInc_Natural",         label: "Natural" },
+    { key: "NInc_Negligente",      label: "Negligent" },
+    { key: "NInc_Intencionais",    label: "Intentional" },
+    { key: "NInc_Reacendimentos",  label: "Reignitions" },
+    { key: "NInc_Desconhecida",    label: "Unknown" },
+    { key: "NInc_NaoInvestigados", label: "Not Investigated" }
+  ];
+
+  const causeColor = d3.scaleOrdinal()
+    .domain(causeDefs.map(d => d.key))
+    .range(["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b"]);
+
+  // ============================
+  // LOAD DATA
+  // ============================
+  async function loadData() {
+    try {
+      const res = await fetch("incendios_all.json");
+      const raw = await res.json();
+      dfConcelho = raw["Estatisticas_Concelho"];
+
+      years = Array.from(new Set(dfConcelho.map(d => d.Ano))).sort((a,b)=>a-b);
+      districts = Array.from(new Set(dfConcelho.map(d => (d.Distrito || "").trim())))
+                       .filter(d => d);
+
+      populateYearSelect();
+      initDotplotControls();
+      initSpiderControls();
+
+      updateDotplot();
+      updateSpiderchart();
+    } catch (err) {
+      console.error("Error loading data:", err);
+    }
+  }
+
+  // Fill year <select> used in dotplot Districts view
+  function populateYearSelect() {
+    const yearSel = document.getElementById("yearSelect");
+    yearSel.innerHTML = "";
+    years.forEach(y => {
+      const opt = document.createElement("option");
+      opt.value = y;
+      opt.textContent = y;
+      yearSel.appendChild(opt);
+    });
+  }
+
+  // ============================
+  // DOTPLOT
+  // ============================
+  function initDotplotControls() {
+    const filterTypeSel = document.getElementById("filterTypeSelect");
+    const districtSel   = document.getElementById("districtSelect");
+    const orderSel      = document.getElementById("orderSelect");
+    const yearSel       = document.getElementById("yearSelect");
+    const yearLabel     = document.getElementById("yearSelectLabel");
+
+    // Mostrar/esconder o seletor de ano consoante a View
+    function updateYearVisibility() {
+      const showYear = filterTypeSel.value === "Districts";
+      yearSel.style.display   = showYear ? "inline-block" : "none";
+      yearLabel.style.display = showYear ? "inline-block" : "none";
+    }
+
+    updateYearVisibility();
+
+    filterTypeSel.addEventListener("change", () => {
+      updateYearVisibility();
+      updateDotplot();
+    });
+
+    districtSel.addEventListener("change", updateDotplot);
+    orderSel.addEventListener("change", updateDotplot);
+    yearSel.addEventListener("change", updateDotplot);
+  }
+
+  function updateDotplot() {
+    const container = document.getElementById("dotplot");
+    container.innerHTML = ""; // clear
+
+    if (!dfConcelho || dfConcelho.length === 0) return;
+
+    const filterType      = document.getElementById("filterTypeSelect").value;
+    const selectedDistrict= document.getElementById("districtSelect").value;
+    const orderKey        = document.getElementById("orderSelect").value;
+    const yearSel         = document.getElementById("yearSelect");
+
+    let rows = [];
+
+    if (filterType === "Years") {
+      // One row per year, optionally filtered to a district
+      years.forEach(year => {
+        let subset = dfConcelho.filter(d => d.Ano === year);
+        if (selectedDistrict !== "All") {
+          subset = subset.filter(d => (d.Distrito || "").trim() === selectedDistrict);
+        }
+        const row = aggregateCauses(subset);
+        row.label = String(year);
+        rows.push(row);
+      });
+    } else {
+      // "Districts": rows are districts, for the selected year
+      const selectedYear = Number(yearSel.value || years[0]);
+
+      districts.forEach(dName => {
+        if (selectedDistrict !== "All" && dName !== selectedDistrict) return;
+
+        const subset = dfConcelho.filter(d =>
+          d.Ano === selectedYear &&
+          (d.Distrito || "").trim() === dName
+        );
+
+        const row = aggregateCauses(subset);
+        row.label = dName;
+        rows.push(row);
+      });
+    }
+
+    // Filter out rows with no data
+    rows = rows.filter(r => r.totalCount > 0);
+
+    if (rows.length === 0) {
+      container.textContent = "No data for the selected filters.";
+      return;
+    }
+
+    // Sort rows by selected cause percentage
+    rows.sort((a,b) => b.perc[orderKey] - a.perc[orderKey]);
+
+    drawDotplot(rows);
+  }
+
+  // Aggregate cause counts + percentages for a subset of rows (concelhos)
+  function aggregateCauses(subset) {
+    const counts = {};
+    causeDefs.forEach(c => counts[c.key] = 0);
+
+    subset.forEach(d => {
+      causeDefs.forEach(c => {
+        const v = +d[c.key] || 0;
+        counts[c.key] += v;
+      });
+    });
+
+    let total = 0;
+    causeDefs.forEach(c => { total += counts[c.key]; });
+
+    const perc = {};
+    causeDefs.forEach(c => {
+      perc[c.key] = total > 0 ? (counts[c.key] / total) * 100 : 0;
+    });
+
+    return {
+      counts,
+      perc,
+      totalCount: total,
+      label: ""
+    };
+  }
+
+  function drawDotplot(rows) {
+    const container = document.getElementById("dotplot");
+    const width  = container.clientWidth  || 700;
+    const height = container.clientHeight || 500;
+
+    const margin = { top: 10, right: 120, bottom: 40, left: 80 };
+    const innerWidth  = width  - margin.left - margin.right;
+    const innerHeight = height - margin.top  - margin.bottom;
+
+    const svg = d3.select("#dotplot")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    const g = svg.append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const yScale = d3.scaleBand()
+      .domain(rows.map(r => r.label))
+      .range([0, innerHeight])
+      .padding(0.3);
+
+    const xScale = d3.scaleLinear()
+      .domain([0, 100])   // percentage 0–100
+      .range([0, innerWidth]);
+
+    // Axes
+    const yAxis = d3.axisLeft(yScale);
+    const xAxis = d3.axisBottom(xScale)
+      .ticks(5)
+      .tickFormat(d => d + "%");
+
+    g.append("g")
+      .attr("class", "y-axis")
+      .call(yAxis);
+
+    g.append("g")
+      .attr("class", "x-axis")
+      .attr("transform", `translate(0, ${innerHeight})`)
+      .call(xAxis);
+
+    g.append("text")
+      .attr("x", innerWidth / 2)
+      .attr("y", innerHeight + 30)
+      .attr("text-anchor", "middle")
+      .attr("font-size", 12)
+      .text("Percentage of fires");
+
+    // One group per row (year/district)
+    const rowGroups = g.selectAll(".row-group")
+      .data(rows)
+      .enter()
+      .append("g")
+      .attr("class", "row-group")
+      .attr("transform", d => `translate(0, ${yScale(d.label) + yScale.bandwidth() / 2})`);
+
+    // guidelines (horizontal line for each row)
+    rowGroups.append("line")
+      .attr("x1", 0)
+      .attr("x2", innerWidth)
+      .attr("y1", 0)
+      .attr("y2", 0)
+      .attr("stroke", "#999")
+      .attr("stroke-width", 1)
+      .attr("opacity", 0.3);
+
+    // Tooltip (global, outside SVG)
+    const tooltip = d3.select("body")
+      .append("div")
+      .style("position", "absolute")
+      .style("padding", "6px 10px")
+      .style("background", "white")
+      .style("border", "1px solid #999")
+      .style("border-radius", "5px")
+      .style("font-size", "12px")
+      .style("pointer-events", "none")
+      .style("opacity", 0)
+      .style("z-index", 999);
+
+    // Dots for each cause (no numeric labels, only tooltip)
+    causeDefs.forEach(cause => {
+      rowGroups.append("circle")
+        .attr("cx", d => xScale(d.perc[cause.key]))
+        .attr("r", 5)
+        .attr("fill", causeColor(cause.key))
+        .attr("opacity", 0.85)
+        .on("mouseover", (event, d) => {
+          tooltip.style("opacity", 1)
+            .html(`
+              <b>${cause.label}</b><br>
+              ${d.counts[cause.key]} fires<br>
+              ${d.perc[cause.key].toFixed(1)}%
+            `);
+        })
+        .on("mousemove", event => {
+          tooltip
+            .style("left", (event.pageX + 10) + "px")
+            .style("top",  (event.pageY - 20) + "px");
+        })
+        .on("mouseout", () => tooltip.style("opacity", 0));
+    });
+
+    // Legend (causes)
+    const legend = svg.append("g")
+      .attr("transform", `translate(${width - margin.right + 10}, ${margin.top})`);
+
+    causeDefs.forEach((c, i) => {
+      const lg = legend.append("g")
+        .attr("transform", `translate(0, ${i * 16})`);
+
+      lg.append("rect")
+        .attr("width", 10)
+        .attr("height", 10)
+        .attr("fill", causeColor(c.key));
+
+      lg.append("text")
+        .attr("x", 14)
+        .attr("y", 9)
+        .attr("font-size", 11)
+        .text(c.label);
+    });
+  }
+
+  // ============================
+  // SPIDER CHART (RADAR)
+  // ============================
+  function initSpiderControls() {
+    const yearBtn = document.getElementById("yearDropdownButtonCauses");
+    const yearDiv = document.getElementById("yearDropdownCauses");
+    const distBtn = document.getElementById("districtDropdownButtonCauses");
+    const distDiv = document.getElementById("districtDropdownCauses");
+
+    // Fill years
+    years.forEach(y => {
+      const lab = document.createElement("label");
+      lab.className = "dropdown-item";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = y;
+      cb.addEventListener("change", updateSpiderchart);
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode("Year " + y));
+      yearDiv.appendChild(lab);
+    });
+
+    // Fill districts
+    districts.forEach(dName => {
+      const lab = document.createElement("label");
+      lab.className = "dropdown-item";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = dName;
+      cb.addEventListener("change", updateSpiderchart);
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode("District " + dName));
+      distDiv.appendChild(lab);
+    });
+
+    // Toggle dropdowns
+    yearBtn.addEventListener("click", () => {
+      yearDiv.style.display = yearDiv.style.display === "block" ? "none" : "block";
+    });
+
+    distBtn.addEventListener("click", () => {
+      distDiv.style.display = distDiv.style.display === "block" ? "none" : "block";
+    });
+
+    // Default selection: first year (if exists)
+    const firstYearCb = yearDiv.querySelector("input[type=checkbox]");
+    if (firstYearCb) firstYearCb.checked = true;
+  }
+
+  function updateSpiderchart() {
+    const container = document.getElementById("spiderchart");
+    container.innerHTML = "";
+
+    if (!dfConcelho || dfConcelho.length === 0) return;
+
+    const yearDiv = document.getElementById("yearDropdownCauses");
+    const distDiv = document.getElementById("districtDropdownCauses");
+
+    const selectedYears = Array.from(yearDiv.querySelectorAll("input:checked"))
+                               .map(cb => +cb.value);
+    const selectedDistricts = Array.from(distDiv.querySelectorAll("input:checked"))
+                                   .map(cb => cb.value);
+
+    const traces = [];
+    const theta = causeDefs.map(c => c.label);
+
+    function seriesFromSubset(subset, name) {
+      const aggr = aggregateCauses(subset);
+      const rValues = causeDefs.map(c => aggr.perc[c.key]); // 0–100
+      return {
+        type: "scatterpolar",
+        r: rValues,
+        theta: theta,
+        name: name,
+        mode: "lines+markers",
+        line: { width: 2 },
+        marker: { size: 6 },
+        fill: "none"
+      };
+    }
+
+    // CASE 1: years & districts selected → show combos year–district (option 1)
+    if (selectedYears.length > 0 && selectedDistricts.length > 0) {
+      selectedYears.forEach(y => {
+        selectedDistricts.forEach(dName => {
+          const subset = dfConcelho.filter(d =>
+            d.Ano === y &&
+            (d.Distrito || "").trim() === dName
+          );
+          if (subset.length > 0) {
+            traces.push(seriesFromSubset(subset, dName + " – " + y));
+          }
+        });
+      });
+    }
+    // CASE 2: only years selected → one line per year (all Portugal)
+    else if (selectedYears.length > 0 && selectedDistricts.length === 0) {
+      selectedYears.forEach(y => {
+        const subset = dfConcelho.filter(d => d.Ano === y);
+        if (subset.length > 0) {
+          traces.push(seriesFromSubset(subset, "Year " + y));
+        }
+      });
+    }
+    // CASE 3: only districts selected → one line per district (all years)
+    else if (selectedYears.length === 0 && selectedDistricts.length > 0) {
+      selectedDistricts.forEach(dName => {
+        const subset = dfConcelho.filter(d => (d.Distrito || "").trim() === dName);
+        if (subset.length > 0) {
+          traces.push(seriesFromSubset(subset, "District " + dName));
+        }
+      });
+    }
+
+    // Fallback if nothing selected or no valid subset
+    if (traces.length === 0 && years.length > 0) {
+      const subset = dfConcelho.filter(d => d.Ano === years[0]);
+      traces.push(seriesFromSubset(subset, "Year " + years[0]));
+    }
+
+    const layout = {
+  polar: {
+    radialaxis: {
+      visible: true,
+      range: [0, 100],
+      tick0: 0,
+      dtick: 20
+    },
+    angularaxis: {
+      tickfont: { size: 12 }
+    }
+  },
+  margin: { t: 40, r: 40, b: 40, l: 40 },   // ← margem mais pequena
+  showlegend: true,
+  legend: { orientation: "h", y: -0.2 },    // ← legenda horizontal (já não corta)
+  autosize: true,
+};
+
+
+    Plotly.newPlot("spiderchart", traces, layout, {responsive: true});
+    setTimeout(() => {
+    Plotly.Plots.resize(document.getElementById("spiderchart"));
+}, 150);
+  }
+
+  // ============================
+  // START
+  // ============================
+  loadData();
+</script>
+
+</body>
+</html>

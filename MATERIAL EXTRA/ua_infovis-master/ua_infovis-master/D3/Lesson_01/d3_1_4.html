@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>D3 Bar Chart with Divs</title>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <style>
+            div.bar {
+                display: inline-block;
+                width: 20px;
+                height: 75px; /* Overridden by D3. */
+                margin-right: 5px;
+                background-color: teal;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Bar chart with divs</h1>
+        <p>Bar height = value × 5 pixels. Hover over a bar to see its value.</p>
+        <p><button id="randomize" type="button">Generate random data</button></p>
+        <section id="chart" aria-label="Bar chart"></section>
+        <script>
+            let dataset = [5, 10, 15, 20, 25, 30, 18, 12];
+            const scaleFactor = 5;
+
+            function render() {
+                d3.select("#chart").selectAll("div.bar")
+                    .data(dataset)
+                    .join("div")
+                    .attr("class", "bar")
+                    .attr("title", function (d) {
+                        return "Value: " + d.toFixed(2);
+                    })
+                    .style("height", function (d) {
+                        return (d * scaleFactor) + "px";
+                    });
+            }
+
+            render();
+
+            d3.select("#randomize").on("click", function () {
+                dataset = [];
+                for (let i = 0; i < 25; i++) {
+                    dataset.push(Math.random() * 30);
+                }
+                render();
+            });
+        </script>
+    </body>
+</html>

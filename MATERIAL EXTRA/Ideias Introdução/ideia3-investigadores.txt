@@ -1,0 +1,102 @@
+IDEIA 3 — INVESTIGADORES / EXPLORAÇÃO DO MERCADO
+Projeto de Information Visualisation (2026/2027)
+Nome provisório: Airbnb Urban Explorer — Distribuição e padrões do alojamento local
+Estado: proposta conceptual para a primeira iteração
+
+1. PROBLEMA E MOTIVAÇÃO
+Os anúncios de alojamento local distribuem-se de forma desigual pelo espaço urbano, diferem em preço e tipologia e podem concentrar-se em anfitriões com múltiplos anúncios. Consultar tabelas extensas dificulta a identificação de padrões e a comparação entre bairros.
+
+A aplicação apresenta uma ferramenta interativa para EXPLORAR E INTERPRETAR padrões da oferta Airbnb. Não pretende, por si só, provar consequências sociais ou relações causais.
+
+2. PÚBLICO-ALVO E CONTEXTO DE UTILIZAÇÃO
+Público principal: estudantes, investigadores e pessoas interessadas na análise urbana e no mercado de alojamento local.
+Contexto: exploração de dados num contexto académico, jornalístico ou de estudo de mercado.
+Exemplo: um estudante pretende perceber em que bairros se concentram os anúncios, como varia a proporção de alojamentos inteiros e qual o peso de anfitriões com vários anúncios.
+
+3. OBJETIVO PRINCIPAL
+Permitir explorar visualmente a distribuição espacial, os preços, as tipologias e a concentração de anúncios, identificando diferenças e padrões entre zonas.
+
+Pergunta central:
+«Como se distribui a oferta Airbnb pela cidade e que padrões existem entre localização, preço, tipologia e concentração de anúncios por anfitrião?»
+
+4. PERGUNTAS A RESPONDER
+- Em que bairros há mais alojamentos Airbnb?
+- A distribuição geográfica dos anúncios é uniforme ou concentrada?
+- Que bairros apresentam preços medianos mais elevados?
+- A concentração de anúncios está associada a diferenças de preços?
+- Onde predominam alojamentos inteiros e onde há mais quartos privados?
+- Qual a proporção de anúncios geridos por anfitriões com múltiplos anúncios?
+- Como varia esse grau de concentração entre bairros?
+- Existem diferenças entre Lisboa e Porto nos padrões de oferta e preços?
+- Se forem usadas várias recolhas históricas comparáveis, como evoluíram estes padrões?
+
+5. DADOS E FEATURES
+Fonte principal: Inside Airbnb (https://insideairbnb.com/get-the-data/), utilizando listings.csv.gz e, para geometria dos bairros, neighbourhoods.geojson.
+Colunas prioritárias:
+- id — identificação do anúncio
+- host_id — identificação do anfitrião
+- latitude, longitude — localização aproximada
+- neighbourhood_cleansed — bairro
+- price — preço anunciado por noite
+- room_type, property_type — tipologia
+- accommodates, bedrooms — capacidade e dimensão
+- calculated_host_listings_count — número de anúncios associados ao anfitrião no recorte analisado
+- number_of_reviews, reviews_per_month — atividade de avaliações
+- review_scores_rating — classificação dos hóspedes
+- availability_365 — disponibilidade agregada
+
+Indicadores calculáveis:
+- Contagem de anúncios por bairro.
+- Preço mediano por bairro e tipologia.
+- Percentagem de anúncios de alojamentos inteiros.
+- Percentagem de anúncios associados a anfitriões com vários anúncios.
+- Distribuição de anúncios por anfitrião.
+- Densidade de anúncios por área de bairro, se a geometria permitir cálculo adequado.
+
+Possíveis datasets complementares (OPCIONAIS):
+- População residente, alojamentos habitacionais ou outras estatísticas oficiais por freguesia, obtidas por exemplo no INE/PORDATA ou dados abertos municipais.
+- Permitiriam contextualizar a concentração de alojamentos em relação à dimensão dos bairros, população ou parque habitacional.
+- Recolhas históricas do próprio Inside Airbnb, caso o objetivo passe a incluir evolução temporal.
+
+NOTA SOBRE COMPLEXIDADE:
+Outros datasets poderiam enriquecer significativamente a interpretação, mas também complicar o trabalho: diferentes limites territoriais, anos de referência, unidades geográficas, indicadores e metodologias tornam a integração mais exigente. Comparações temporais exigem ainda cautela quanto à cobertura e às diferenças entre recolhas. Para a primeira versão, recomenda-se usar apenas Inside Airbnb e o GeoJSON dos bairros, sem inferir impacto na habitação a partir dos anúncios, isoladamente.
+
+6. VISUALIZAÇÕES PROPOSTAS (D3.JS)
+A. Mapa coroplético por bairro ou mapa de pontos: número/densidade de anúncios e seleção de áreas.
+B. Gráfico de barras ordenadas ou box plot: comparação de preços por bairro e/ou tipologia; distribuições em vez de apenas médias.
+C. Visualização de concentração por anfitrião: histograma de número de anúncios por anfitrião, ou gráfico de composição entre anúncios de anfitriões com um versus vários anúncios.
+
+Interações: filtros por bairro e tipologia, mudança da métrica representada no mapa, brushing, hover com detalhes, seleção sincronizada e comparação de zonas.
+
+7. PROTÓTIPO DE BAIXA FIDELIDADE
+Sugestão: Figma ou papel com o dashboard e estados de interação.
+Estados sugeridos:
+- Visão geral do mapa e indicadores por bairro.
+- Bairro selecionado com atualização dos gráficos.
+- Comparação de dois bairros com tipologias filtradas.
+- Alternância entre métricas de preço e concentração dos anfitriões.
+
+8. TESTES DE USABILIDADE
+Tarefas possíveis:
+- Identificar os três bairros com maior número de anúncios.
+- Comparar o preço mediano e a proporção de alojamentos inteiros entre dois bairros.
+- Determinar em que zona é mais elevada a proporção de anúncios de anfitriões com múltiplos anúncios.
+Registar sucesso, erros de interpretação, clareza de legendas e facilidade de utilização dos filtros.
+
+9. TRATAMENTO DOS DADOS
+Criar CSV/JSON limpo com colunas relevantes; converter preços para valores numéricos; validar coordenadas; normalizar bairros; tratar valores em falta; criar agregações por bairro e anfitrião; documentar filtros. Para mapas coropléticos, usar o neighbourhoods.geojson e assegurar correspondência dos nomes/códigos geográficos.
+
+10. LIMITAÇÕES
+- Os anúncios observados não equivalem necessariamente ao universo total do alojamento local.
+- Não é possível inferir, apenas destes dados, o impacto causal nos preços da habitação ou no turismo.
+- Preço anunciado não representa receita efetiva.
+- Um anfitrião com vários anúncios não corresponde necessariamente a um proprietário com vários imóveis.
+- Métricas entre cidades exigem comparação de categorias e contextos equivalentes.
+
+11. ÂMBITO E PRIMEIRA ITERAÇÃO (26/10/2026)
+Delimitar a questão de investigação; selecionar a cidade (ou uma comparação simples entre duas cidades); caracterizar as features; justificar três vistas; produzir protótipo de baixa fidelidade; preparar tarefas e testar com utilizadores. A implementação D3.js pertence à iteração seguinte.
+
+12. AVALIAÇÃO DA PROPOSTA
+Pontos fortes: bom alinhamento com visualização exploratória, perguntas analíticas ricas, possibilidade de visualizações originais e interações coordenadas.
+Riscos: uma pergunta demasiado ampla, interpretação causal indevida e dificuldades adicionais se forem integrados dados estatísticos externos.
+Decisão em aberto: estudar uma única cidade de forma aprofundada ou comparar Lisboa e Porto com métricas comparáveis.

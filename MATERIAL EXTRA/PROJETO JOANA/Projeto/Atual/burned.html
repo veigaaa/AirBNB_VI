@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Burned Area – Fire Dashboard Portugal</title>
+
+  <!-- Plotly -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f4f4f4;
+    }
+
+    body {
+      padding: 0px 25px;
+      box-sizing: border-box;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .top-bar-left {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .status-line {
+    font-size: 13px;
+    color: #444;
+    margin-top: 4px;
+    display: none;
+}
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 20px;
+      width: 100%;
+      align-items: flex-start;
+    }
+
+    #burned-map {
+      width: 100%;
+      height: calc(100vh - 120px) !important;
+    }
+
+    .right-column {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: -50px;
+    }
+
+    .chart-box {
+      margin-top: -30px;
+      background: #e0e0e0;
+      padding: 10px 10px 5px 10px;
+      border-radius: 8px;
+    }
+
+    /* Controlo do slider e legendas das classes */
+    #bin-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    #bin-labels {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      font-size: 12px;
+      align-items: center;
+    }
+
+    .bin-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .bin-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    #bin-slider {
+      width: 100%;
+    }
+
+    #reset-district {
+      padding: 6px 10px;
+      font-size: 13px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      background: #ffffff;
+      cursor: pointer;
+    }
+
+    #reset-district:hover {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <h1>Burned Area Analysis</h1>
+      <div class="status-line">
+        <span id="status-text">View mode: <b>General (year & districts)</b></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-layout">
+
+    <div class="left-map">
+      <label><b>Select year:</b></label>
+      <select id="burned-year"></select>
+      <div id="burned-map" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="right-column">
+
+      <!-- Gráfico 1: topo -->
+      <div class="chart-box">
+        <div id="burned-total-stacked" style="height:260px;"></div>
+      </div>
+
+      <!-- Gráfico 2: baixo -->
+      <div class="chart-box">
+        <div id="bin-controls">
+          <div id="bin-labels"></div>
+          <input type="range" id="bin-slider" min="0" max="4" value="4">
+        </div>
+        <div id="burned-normalized" style="height:260px;"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    console.log("burned.html loaded");
+
+    let dfMap = [];
+    let gdfJson = null;
+    let anos = [];
+    let selectedDistrict = null;  // null = vista geral
+
+    // 5 classes agregadas de área ardida (em ha)
+    const areaBins = [
+      { key: "bin_0_10",     label: "0–10 ha",      cols: ["NIncRur_0_1ha", "NIncRur_1_10ha"] },
+      { key: "bin_10_50",    label: "10–50 ha",     cols: ["NIncRur_10_20ha", "NIncRur_20_50ha"] },
+      { key: "bin_50_200",   label: "50–200 ha",    cols: ["NIncRur_50_100ha", "NIncRur_100_500ha"] },
+      { key: "bin_200_1000", label: "200–1000 ha",  cols: ["NIncRur_100_500ha", "NIncRur_500_1000ha"] },
+      { key: "bin_1000p",    label: "1000+ ha",     cols: ["NIncRur_1000_n_ha"] }
+    ];
+
+    const binColors = [
+      "#ff0000",   // 0–10
+      "#ff8c00",   // 10–50
+      "#ffd000",   // 50–200
+      "#9acd32",   // 200–1000
+      "#4b0082"    // 1000+
+    ];
+
+    let selectedBinIndex = areaBins.length - 1;
+
+    /* ===============================
+       LOAD DATA
+    ==================================*/
+    async function loadData() {
+      let raw = await (await fetch("incendios_all.json")).json();
+      dfMap = Object.values(raw["Estatisticas_Distrito"]).flat();
+      gdfJson = await (await fetch("portugal.geojson")).json();
+
+      anos = [...new Set(dfMap.map(r => r.Ano))].sort((a,b) => a - b);
+
+      initBurnedYearSelector();
+      initBinControls();
+      initResetButton();
+      // 🔥 Só desenha depois do GeoJSON estar carregado
+setTimeout(() => {
+    updateBurnedDashboard();
+}, 50);
+
+    }
+
+    /* ===============================
+       SELECTOR DO ANO
+    ==================================*/
+    function initBurnedYearSelector() {
+  const sel = document.getElementById("burned-year");
+  sel.innerHTML = "";
+
+  anos.forEach(a => {
+    const opt = document.createElement("option");
+    opt.value = a;
+    opt.textContent = a;
+    sel.appendChild(opt);
+  });
+
+  if (anos.length) {
+    sel.value = anos[0];
+  }
+
+  // 🔥 LINHA CRÍTICA: desenha os gráficos imediatamente
+  drawBurnedStacked();
+  drawBurnedNormalized();
+  drawBurnedMap()
+  sel.onchange = () => {
+    updateBurnedDashboard();
+  };
+}
+
+
+    /* ===============================
+       BOTÃO RESET
+    ==================================*/
+    function initResetButton() {
+      const btn = document.getElementById("reset-district");
+      btn.onclick = () => {
+        selectedDistrict = null;
+        updateStatusText();
+        updateBurnedDashboard();
+      };
+    }
+
+    function updateStatusText() {
+      const el = document.getElementById("status-text");
+      if (!selectedDistrict) {
+        el.innerHTML = 'View mode: <b>General (year & districts)</b>';
+      } else {
+        el.innerHTML = 'View mode: <b>District over time – ' + selectedDistrict + '</b>';
+      }
+    }
+
+    function updateBurnedDashboard() {
+      drawBurnedMap();
+
+      if (selectedDistrict) {
+        // MODO DISTRITO: gráficos em função do tempo
+        drawBurnedTemporalTotal();
+        drawBurnedTemporalNormalized();
+      } else {
+        // MODO GERAL: gráficos em função do ano (distritos no eixo X)
+        drawBurnedStacked();
+        drawBurnedNormalized();
+      }
+    }
+
+    /* ===============================
+       CONTROLOS DO SLIDER + LEGENDAS
+    ==================================*/
+    function initBinControls() {
+      const labelsDiv = document.getElementById("bin-labels");
+      labelsDiv.innerHTML = "";
+
+      areaBins.forEach((bin, idx) => {
+        const span = document.createElement("span");
+        span.className = "bin-label";
+        span.innerHTML =
+          `<span class="bin-swatch" style="background:${binColors[idx]}"></span>${bin.label}`;
+        labelsDiv.appendChild(span);
+      });
+
+      const slider = document.getElementById("bin-slider");
+      slider.min = 0;
+      slider.max = areaBins.length - 1;
+      slider.value = areaBins.length - 1;
+
+      slider.oninput = function () {
+        selectedBinIndex = Number(this.value);
+        // só afeta o gráfico de baixo
+        if (selectedDistrict) {
+          drawBurnedTemporalNormalized();
+        } else {
+          drawBurnedNormalized();
+        }
+      };
+    }
+
+    /* ===============================
+       MAPA (com highlight + click)
+    ==================================*/
+    function drawBurnedMap() {
+      const year = Number(document.getElementById("burned-year").value);
+      const dataYear = dfMap.filter(r => r.Ano === year);
+
+      const sum = {};
+      dataYear.forEach(r => {
+        const k = (r.Distrito || "").trim();
+        sum[k] = (sum[k] || 0) + Number(r.Num_IncendiosRurais || 0);
+      });
+
+      const distritos = Object.keys(sum);
+      const valores   = Object.values(sum);
+
+      const districtCenters = {
+        "Aveiro": { lon: -8.5377, lat: 40.7318 },
+        "Beja": { lon: -7.9237, lat: 37.8624 },
+        "Braga": { lon: -8.2908, lat: 41.5264 },
+        "Bragança": { lon: -6.8475, lat: 41.5276 },
+        "Castelo Branco": { lon: -7.6348, lat: 39.9759 },
+        "Coimbra": { lon: -8.2482, lat: 40.1632 },
+        "Évora": { lon: -7.8913, lat: 38.6611 },
+        "Faro": { lon: -8.6312, lat: 37.1857 },
+        "Guarda": { lon: -7.3069, lat: 40.6398 },
+        "Leiria": { lon: -8.7785, lat: 39.6918 },
+        "Lisboa": { lon: -9.3641, lat: 38.802 },
+        "Portalegre": { lon: -7.6137, lat: 39.1288 },
+        "Porto": { lon: -8.4172, lat: 41.2239 },
+        "Santarém": { lon: -8.5138, lat: 39.2212 },
+        "Setúbal": { lon: -8.8777, lat: 38.3332 },
+        "Viana do Castelo": { lon: -8.4957, lat: 41.8473 },
+        "Vila Real": { lon: -7.6618, lat: 41.5674 },
+        "Viseu": { lon: -7.8405, lat: 40.8409 }
+      };
+
+      const labelLon = [];
+      const labelLat = [];
+      const labelText= [];
+
+      distritos.forEach(name => {
+        const c = districtCenters[name];
+        if (c) {
+          labelLon.push(c.lon);
+          labelLat.push(c.lat);
+          labelText.push(name.replace(" ", "<br>"));
+        }
+      });
+
+      const base = {
+        type: "choropleth",
+        geojson: gdfJson,
+        locations: distritos,
+        z: valores,
+        featureidkey: "properties.name",
+        colorscale: "Reds",
+        marker: { line: { width: 0.5, color: "#333" } },
+        hoverinfo: "skip"
+      };
+
+      const highlight = {
+        type: "choropleth",
+        geojson: gdfJson,
+        locations: distritos,
+        z: Array(distritos.length).fill(0),
+        featureidkey: "properties.name",
+        colorscale: [[0,"rgba(0,0,0,0)"],[1,"rgba(0,0,0,0)"]],
+        marker: { line: { width: 0, color: "transparent" } },
+        showscale: false,
+        hovertemplate:
+          "<b>%{location}</b><br>Incêndios: %{customdata}<extra></extra>",
+        customdata: valores
+      };
+
+      const labels = {
+        type: "scattergeo",
+        lon: labelLon,
+        lat: labelLat,
+        text: labelText,
+        mode: "text",
+        textfont: { size: 9, color: "#111" },
+        hoverinfo: "skip"
+      };
+
+      const layout = {
+        geo: {
+          fitbounds: "locations",
+          projection: { type: "mercator" },
+          showcountries: false,
+          showland: true,
+          landcolor: "#eeeeee"
+        },
+        margin: { t:0, r:0, l:0, b:0 }
+      };
+
+      Plotly.newPlot("burned-map", [base, highlight, labels], layout).then(gd => {
+        // hover highlight
+        gd.on("plotly_hover", ev => {
+          const i = ev.points[0].pointIndex;
+          const n = distritos.length;
+          const widths = Array.from({length:n}, (_,idx)=>idx===i?3:0);
+          const colors = widths.map(w => w ? "yellow" : "transparent");
+
+          Plotly.restyle(gd, {
+            "marker.line.width": [widths],
+            "marker.line.color": [colors]
+          }, [1]);
+        });
+
+        gd.on("plotly_unhover", () => {
+          Plotly.restyle(gd, {
+            "marker.line.width": 0,
+            "marker.line.color": "transparent"
+          }, [1]);
+        });
+
+        // click para selecionar distrito
+        gd.on("plotly_click", ev => {
+          const loc = ev.points[0].location; // nome do distrito
+          if (selectedDistrict === loc) {
+            selectedDistrict = null;
+          } else {
+            selectedDistrict = loc;
+          }
+          updateStatusText();
+          updateBurnedDashboard();
+        });
+      });
+    }
+
+    /* ===============================
+       GRÁFICO 1 – MODO GERAL (ANOS -> DISTRITOS)
+    ==================================*/
+    function drawBurnedStacked() {
+      const year = Number(document.getElementById("burned-year").value);
+      const dataYear = dfMap.filter(r => r.Ano === year);
+
+      const byDistrict = {};
+
+      dataYear.forEach(r => {
+        const d = (r.Distrito || "").trim();
+        if (!byDistrict[d]) {
+          byDistrict[d] = { f:0, s:0, a:0 };
+        }
+        byDistrict[d].f += +r.AreaArdPov_NoDistrito   || 0;
+        byDistrict[d].s += +r.AreaArdMato_NoDistrito  || 0;
+        byDistrict[d].a += +r.AreaArdAgric_NoDistrito || 0;
+      });
+
+      let districts = Object.keys(byDistrict);
+      districts.sort((d1,d2) => {
+        const t1 = byDistrict[d1].f + byDistrict[d1].s + byDistrict[d1].a;
+        const t2 = byDistrict[d2].f + byDistrict[d2].s + byDistrict[d2].a;
+        return t2 - t1;
+      });
+
+      const forest = districts.map(d => byDistrict[d].f);
+      const scrub  = districts.map(d => byDistrict[d].s);
+      const agric  = districts.map(d => byDistrict[d].a);
+
+      Plotly.newPlot("burned-total-stacked",
+        [
+          { x: districts, y: forest, name: "Forest",       type: "bar", marker:{color:"#ff0000"} },
+          { x: districts, y: scrub,  name: "Scrubland",    type: "bar", marker:{color:"#ff8c00"} },
+          { x: districts, y: agric,  name: "Agricultural", type: "bar", marker:{color:"#ffd000"} }
+        ],
+        {
+          barmode: "stack",
+          title: { text: "Total Burned Area by District and Land Use", x: 0.02 },
+          margin: { t: 50, r: 20, l: 60, b: 80 },
+          xaxis: { tickangle: -45, title:"Districts" },
+          yaxis: { title: "Total Area Burned (ha)" }
+        }
+      );
+    }
+
+    /* ===============================
+       GRÁFICO 2 – MODO GERAL (NORMALIZADO POR DISTRITO)
+    ==================================*/
+    function drawBurnedNormalized() {
+      const year = Number(document.getElementById("burned-year").value);
+      const dataYear = dfMap.filter(r => r.Ano === year);
+
+      const byDistrict = {};
+
+      dataYear.forEach(r => {
+        const d = (r.Distrito || "").trim();
+        if (!byDistrict[d]) {
+          byDistrict[d] = {};
+          areaBins.forEach(bin => byDistrict[d][bin.key] = 0);
+        }
+
+        areaBins.forEach(bin => {
+          bin.cols.forEach(col => {
+            byDistrict[d][bin.key] += +r[col] || 0;
+          });
+        });
+      });
+
+      const districts = Object.keys(byDistrict).sort();
+
+      const traces = [];
+
+      areaBins.forEach((bin, idx) => {
+        const y = [];
+
+        districts.forEach(d => {
+          let tot = 0;
+          areaBins.forEach(b => { tot += byDistrict[d][b.key] || 0; });
+          const v = tot > 0 ? (byDistrict[d][bin.key] || 0) / tot : 0;
+          y.push(v);
+        });
+
+        traces.push({
+          x: districts,
+          y: y,
+          name: bin.label,
+          type: "bar",
+          marker: {
+            color: binColors[idx],
+            opacity: idx <= selectedBinIndex ? 1 : 0.25
+          },
+          hovertemplate:
+            `${bin.label}<br>%{x}<br>%{y:.2f}<extra></extra>`
+        });
+      });
+
+      const layout = {
+        barmode: "stack",
+        title: { text: "Normalized Fire Count by Burned Area Class (per district)", x: 0.02 },
+        margin: { t: 50, r: 20, l: 60, b: 80 },
+        xaxis: { tickangle: -45, title: "Districts" },
+        yaxis: { title: "Normalized Fire Count", range: [0, 1] }
+      };
+
+      Plotly.newPlot("burned-normalized", traces, layout);
+    }
+
+    /* ===============================
+       GRÁFICO 1 – MODO DISTRITO (TEMPORAL)
+    ==================================*/
+    function drawBurnedTemporalTotal() {
+      if (!selectedDistrict) return;
+
+      const dName = selectedDistrict;
+      const years = anos.slice(); // todos os anos
+
+      const fArr = [];
+      const sArr = [];
+      const aArr = [];
+
+      years.forEach(y => {
+        const rows = dfMap.filter(r => r.Ano === y && (r.Distrito || "").trim() === dName);
+        let f = 0, s = 0, a = 0;
+        rows.forEach(r => {
+          f += +r.AreaArdPov_NoDistrito   || 0;
+          s += +r.AreaArdMato_NoDistrito  || 0;
+          a += +r.AreaArdAgric_NoDistrito || 0;
+        });
+        fArr.push(f);
+        sArr.push(s);
+        aArr.push(a);
+      });
+
+      Plotly.newPlot("burned-total-stacked",
+        [
+          { x: years, y: fArr, name: "Forest",       type: "scatter", mode:"lines+markers", marker:{color:"#ff0000"} },
+          { x: years, y: sArr, name: "Scrubland",    type: "scatter", mode:"lines+markers", marker:{color:"#ff8c00"} },
+          { x: years, y: aArr, name: "Agricultural", type: "scatter", mode:"lines+markers", marker:{color:"#ffd000"} }
+        ],
+        {
+          title: { text: "Burned Area Over Time – " + dName, x: 0.02 },
+          margin: { t: 50, r: 20, l: 60, b: 50 },
+          xaxis: { 
+  title: "Year",
+  tickmode: "array",
+  tickvals: years,
+  ticktext: years,
+  tickangle: -65
+},
+          yaxis: { title: "Total Area Burned (ha)" }
+        }
+      );
+    }
+
+    /* ===============================
+       GRÁFICO 2 – MODO DISTRITO (TEMPORAL, NORMALIZADO)
+    ==================================*/
+    function drawBurnedTemporalNormalized() {
+      if (!selectedDistrict) return;
+
+      const dName = selectedDistrict;
+      const years = anos.slice();
+
+      const traces = [];
+
+      areaBins.forEach((bin, idx) => {
+        const yVals = [];
+
+        years.forEach(y => {
+          const rows = dfMap.filter(r => r.Ano === y && (r.Distrito || "").trim() === dName);
+          let binCount = 0;
+          let totalCount = 0;
+
+          rows.forEach(r => {
+            areaBins.forEach(b => {
+              b.cols.forEach(col => {
+                totalCount += +r[col] || 0;
+              });
+            });
+            bin.cols.forEach(col => {
+              binCount += +r[col] || 0;
+            });
+          });
+
+          const v = totalCount > 0 ? binCount / totalCount : 0;
+          yVals.push(v);
+        });
+
+        traces.push({
+          x: years,
+          y: yVals,
+          name: bin.label,
+          type: "bar",
+          marker: {
+            color: binColors[idx],
+            opacity: idx <= selectedBinIndex ? 1 : 0.25
+          },
+          hovertemplate:
+            `${bin.label}<br>Year %{x}<br>%{y:.2f}<extra></extra>`
+        });
+      });
+
+      const layout = {
+        barmode: "stack",
+        title: { text: "Normalized Fire Count by Burned Area Class – " + dName, x: 0.02 },
+        margin: { t: 50, r: 20, l: 60, b: 50 },
+        xaxis: { title: "Year" },
+        yaxis: { title: "Normalized Fire Count", range: [0, 1] }
+      };
+
+      Plotly.newPlot("burned-normalized", traces, layout);
+    }
+
+    loadData();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,129 @@
+EXPLICAÇÃO DO MATERIAL DAS AULAS PRÁTICAS
+Projeto de Visualização de Informação — AIRBNB EXPLORER
+Documento de passagem de contexto para uma nova conversa
+
+1. CONTEXTO E OBJETIVO DO PROJETO
+
+O Airbnb Explorer é uma aplicação web de exploração VISUAL do mercado de alojamento local em Lisboa e no Porto, baseada em dados públicos do Inside Airbnb. Não é uma plataforma de reservas, nem de publicação de anúncios, nem um modelo de previsão de rentabilidade.
+
+Persona apresentada no PowerPoint: Charles, 59 anos, investidor com pouca experiência neste mercado, que pretende comprar um apartamento para alojamento local. Quer perceber onde existem concorrentes, como variam os preços por zona e características e como se poderá posicionar o seu imóvel. O público principal inclui potenciais investidores, proprietários e gestores; quem procura alojamento é um público complementar.
+
+A aplicação deve ajudar o utilizador a passar de uma visão geral da cidade à análise de zonas e anúncios comparáveis: «Onde estão os alojamentos concorrentes? Que preços praticam? Que características têm?».
+
+Existe nos protótipos uma entrada com seleção de Lisboa/Porto e dos objetivos «Procurar»/«Anunciar». Ambos usam essencialmente o mesmo dashboard, podendo variar apenas a ênfase dos filtros.
+
+2. O QUE VAMOS DESENVOLVER PRIMEIRO (PRIORIDADE ATUAL)
+
+1) MAPA INTERATIVO: mostrar regiões/bairros e anúncios; permitir selecionar uma zona no mapa e, depois, identificar os alojamentos dessa área. Usar os ficheiros GeoJSON de Lisboa e Porto e as coordenadas de cada anúncio.
+
+2) HISTOGRAMA DE PREÇOS: representar a distribuição dos preços por noite dos anúncios que estão atualmente selecionados/filtrados. Deve reagir à seleção de cidade, bairro/zona e demais filtros. Atenção: histograma de frequências NÃO é o mesmo que gráfico de barras de preço mediano por bairro.
+
+3) LISTA DE ANÚNCIOS: apresentar os alojamentos correspondentes à cidade, região e filtros ativos, com informação básica (preço, tipologia, quartos, capacidade, avaliação, etc.). A lista é uma componente da interface, não substitui uma das visualizações estatísticas exigidas.
+
+4) FILTROS COORDENADOS (CROSS-FILTERING): cidade, bairro, tipo de alojamento, preço, quartos e capacidade como base. Limpar filtros e ordenação da lista são úteis. A interação essencial é: selecionar uma zona no mapa -> recalcular o conjunto de anúncios -> atualizar o histograma e a lista. Os demais filtros também devem atualizar todas as vistas relevantes.
+
+EVOLUÇÕES, DEPOIS DE A BASE FUNCIONAR:
+- Scatterplot (preço versus capacidade, quartos ou avaliações), com seleção e tooltips.
+- Gráfico de barras horizontais para comparar o preço mediano entre bairros (previsto na apresentação inicial).
+- Detalhes de um anúncio clicando no mapa ou na lista; comparação direta de anúncios.
+- «Comparar o meu imóvel»: descrição de um imóvel hipotético, preço pretendido e comparação com a distribuição dos preços de anúncios semelhantes.
+- Possíveis melhorias: mapa de densidade, box plot por bairro e calendar heatmap de disponibilidade. Estas não fazem parte da primeira implementação obrigatória.
+
+O PowerPoint/protótipo inicial previa três visualizações centrais: mapa, barras por bairro e scatterplot. A PRIORIDADE MAIS RECENTE do aluno para começar a programar é: mapa interativo + histograma + anúncios filtráveis. Acrescentar mais tarde pelo menos uma terceira visualização distinta (por exemplo scatterplot) e, se possível, as barras por bairro, tendo em conta o enunciado.
+
+3. DADOS DISPONÍVEIS E TRATAMENTO
+
+Foram fornecidos ficheiros Inside Airbnb para Lisboa (sufixo -lis) e Porto (sufixo -por):
+- listings-lis.csv.gz e listings-por.csv.gz: ficheiros de anúncios detalhados, fonte principal para a app; existem também versões .csv simplificadas.
+- neighbourhoods-lis.geojson e neighbourhoods-por.geojson: polígonos geográficos para desenho/seleção das zonas.
+- neighbourhoods-lis.csv e neighbourhoods-por.csv: nomes das zonas.
+- calendar-lis.csv.gz e calendar-por.csv.gz: dados de disponibilidade por data, apenas para uma fase complementar.
+- reviews-lis/por.csv e .csv.gz: avaliações, opcionais nesta fase.
+
+Variáveis de anúncios úteis (nos ficheiros detalhados, após seleção e limpeza): id, name, listing_url, picture_url, latitude, longitude, neighbourhood_cleansed, price, room_type, property_type, accommodates, bedrooms, beds, amenities, number_of_reviews, review_scores_rating, minimum_nights, availability_365, host_is_superhost, calculated_host_listings_count.
+
+Plano de preparação: manter os ficheiros originais, usar Python/Pandas para selecionar campos, converter o preço monetário para número, validar coordenadas e valores em falta, tratar extremos de forma documentada e gerar um ou dois ficheiros CSV/JSON menores para D3 carregar no browser. Os calendários são muito volumosos e deverão ser agregados caso venham a ser usados. Os ficheiros calendar enviados NÃO contêm preço diário; não inferir preços diários ou reservas confirmadas a partir deles. Os preços do listings são anúncios observados na recolha, não receita obtida.
+
+4. AULAS PRÁTICAS DE D3.JS — AS MAIS IMPORTANTES
+
+RECOMENDAÇÃO: usar HTML + CSS + JavaScript + D3.js, preferencialmente D3 v7 conforme os exemplos principais das aulas. Para o projeto, reutilizar CONCEITOS e padrões, adaptando o código à estrutura de dados Airbnb.
+
+AULA 1 — D3 Introduction
+Ficheiros: README(1).md, d3_1_1.html, d3_1_3.htm, d3_1_4.html, D3 Introduction.pdf.
+Matéria: importar D3; d3.select()/selectAll(); encadeamento de métodos; .append(), .attr(), .style(), .text(); ligação de dados com .data(...).join(...); geração de barras simples a partir de um array.
+Aplicação: preparar as bases da página, carregar D3 e entender como os dados originam elementos visuais; essencial para todos os gráficos.
+
+AULA 2 — Bar Chart and Interaction
+Ficheiros: README(2).md, imagens simple_bars.jpg, svg_circles.jpg e bars.jpg (e exemplos associados).
+Matéria: SVG; rect/circle/text; posição e dimensões dos elementos; etiquetas; eventos .on('click', function(event,d){...}); ordenação; .transition() e .duration().
+Aplicação: barras, histograma, ações de clique, destaque visual e atualizações dos gráficos.
+
+AULA 3 — Scatterplot and Scales & Axes
+Ficheiros: README(3).md, d3_3_7.htm, MIECT_Alunos_Ano.json, DETI_Dados_Candidatos.json e versões CSV, points_labels.jpg.
+Matéria: scatterplots; carregar dados externos com d3.json(); promessas .then(...); escalas d3.scaleLinear() e d3.scalePoint(); d3.extent(); eixos d3.axisBottom()/axisLeft(); desenho de linhas.
+Aplicação: escala de preços no histograma, eixos dos gráficos e o futuro scatterplot preço versus quartos/capacidade/avaliação. Os exemplos de ficheiros externos pressupõem executar a app num servidor local HTTP, não apenas abrir HTML como file://.
+
+AULA 4 — Map Visualization and Grouping
+Ficheiros: README(4).md, D3_4_1_start.htm, D3_4_1_inspect_this.htm, world_countries.json, world_cup_geo.tsv, geo_vis.jpg, finalmap.jpg.
+Matéria: formato GeoJSON; projeções (d3.geoMercator()); d3.geoPath().projection(...); desenhar polígonos com SVG <path>; projetar coordenadas de pontos; pré-processamento; d3.group(), d3.rollup(), d3.sum(), d3.mean().
+Aplicação: DESENHAR os bairros/regiões de Lisboa e Porto a partir dos GeoJSON, representar anúncios por coordenadas e calcular agregados por bairro. Em vez de configurar manualmente uma projeção mundial, será necessário ajustá-la à extensão geográfica de cada cidade.
+
+AULA 5 — Layouts
+Ficheiros: README(5).md, D3_5_1.htm, DETI.json, nos.json, nos_modif.json, Miserables.json, forcelayout.jpg, treemap.jpg.
+Matéria: d3.forceSimulation(), grafos, árvores e d3.treemap().
+Aplicação: POUCO PRIORITÁRIA. Pode servir como inspiração para vistas hierárquicas, mas não é necessária ao mapa/histograma/lista nem ao scatterplot inicialmente previsto.
+
+AULA 6 EXTRA — Brushing and Filtering
+Ficheiros CRUCIAIS: README(6).md, D3_brush_filter_01.htm, D3_brush_filter_02.htm, D3_brush_filter_03.htm, D3_brush_filter_04_complete.htm, map.json, random_stuff.json, brushing.jpg, no_interaction.jpg.
+Matéria: mapa + barras + scatterplot em conjunto; guardar seleções; função central handleSelection(key) que destaca a mesma entidade nas várias visualizações; filtros controlados por slider; .filter() em datasets e seleções D3; redesenhar com .data(...).join(...) para acompanhar alterações.
+Aplicação: ESTA É A REFERÊNCIA MAIS DIRETA PARA O AIRBNB EXPLORER. Adaptar a lógica para selecionar bairro/anúncios, guardar o estado dos filtros e atualizar mapa, histograma, KPIs e lista ao mesmo tempo. Estes exemplos específicos usam D3 v6; ao integrar, manter uma única versão coerente, preferencialmente v7.
+
+5. RESTANTE MATERIAL E RELEVÂNCIA
+
+SVG Introduction (SVG_introduction.pdf, README(7).md, Exe1_*.htm): IMPORTANTE como fundamento visual de rect, circle, path, texto, fill/stroke, transformações e agrupamentos <g>. D3 usa SVG para desenhar grande parte das views.
+
+Google Charts (GoogleChartsTools.pptx, README respetivo, GCT_Ex_01/07/11.htm e exemplos): COMPLEMENTAR para compreender escolhas de gráficos, eixos, legendas e tratamento de dados. Não é necessário implementar os gráficos principais em Google Charts; a prioridade da unidade curricular/projeto é D3.js.
+
+VTK/Python 3D (cone.py, poligonal.py, widget.py, ugrid.py e README das aulas VTK): POUCO RELEVANTE para esta aplicação web 2D. Ensina visualização tridimensional, iluminação, objetos 3D, picking e recortes, mas não é preciso para o mapa/histograma/dashboard. Não usar VTK apenas porque faz parte do material.
+
+6. ORDEM DE IMPLEMENTAÇÃO SUGERIDA, EM LINHA COM AS AULAS
+
+ETAPA A — Preparar dados: inspecionar listings detalhados, limpar/exportar dados de anúncios e validar os GeoJSON.
+ETAPA B — Estrutura base: HTML/CSS/JS, seleção Lisboa/Porto, carregar ficheiros tratados com D3 (Aula 1 e Aula 3).
+ETAPA C — Primeiro histograma de preços com SVG, escalas e eixos (Aulas 2 e 3).
+ETAPA D — Mapa geográfico com GeoJSON, projeção, limites e pontos dos anúncios (Aula 4).
+ETAPA E — Estado central dos filtros e função que atualiza mapa, histograma e lista (Aula 6). Testar seleção por zona e botão de limpar.
+ETAPA F — Scatterplot e/ou barras por bairro, detalhes, ordenação e comparação, se a base estiver estável (Aulas 2, 3 e 6).
+ETAPA G — Usabilidade, desempenho, tratamento de situações sem resultados e documentação das limitações.
+
+Este encadeamento é uma proposta de implementação, NÃO uma exigência transcrita das aulas. A primeira entrega funcional deve centrar-se numa seleção de zona que altere de forma correta os anúncios visíveis e a distribuição de preços.
+
+7. PADRÃO TÉCNICO APLICÁVEL (CONCEPTUAL)
+
+Estado comum da app (exemplo): cidade, bairro/zona, intervalo de preços, tipo de alojamento, quartos, capacidade e anúncio selecionado.
+
+Ao mudar uma opção ou clicar no mapa:
+  - atualizar o estado;
+  - filtrar os anúncios de origem para obter o subconjunto ativo;
+  - atualizar ou redesenhar os elementos D3 do mapa e do histograma;
+  - reconstruir a lista de anúncios e os indicadores a partir do mesmo subconjunto;
+  - manter visualmente identificados a região e os filtros selecionados.
+
+Padrões ensinados: .data(...).join(...), .on('click', ...), .filter(...), d3.geoPath(), escalas e agrupamentos. Evitar código duplicado: criar funções como renderMap(), renderHistogram(), renderListings() e updateDashboard(). Os nomes são sugestões, não nomes dos ficheiros das aulas.
+
+8. REFERÊNCIAS E MATERIAIS A REENVIAR AO OUTRO CHAT
+
+Essencial para a nova conversa:
+- ESTE TXT, como contexto.
+- O enunciado «Visualization Assignment 26-27.pdf», para verificar requisitos e entregáveis.
+- Os ficheiros Airbnb: listings-lis.csv.gz, listings-por.csv.gz, neighbourhoods-lis.geojson, neighbourhoods-por.geojson (e/ou datasets já tratados, quando existirem).
+- README(4).md + exemplos de mapa, README(6).md + D3_brush_filter_04_complete.htm (ou os quatro passos) como referências diretas.
+- README(2).md e README(3).md se forem necessários para construir o histograma/scatterplot.
+- «IdeiaFinal(2).txt» e «basesDesenvolvimentoPT1(2).txt» para consultar funcionalidades discutidas anteriormente.
+- O PowerPoint «Airbnb_matilde_118907_leandro_119776.pptx» e sketches, se for necessário retomar a persona, o fluxo ou o layout exato.
+
+Opcional: aulas de SVG, Google Charts, VTK, calendários e reviews, consoante o que for implementado. Não é preciso voltar a enviar TODOS os exemplos no início da nova conversa.
+
+NOTA DE CONTINUIDADE: o aluno informou que ainda vai fornecer código de um projeto do ano anterior, de outro tema. Deve ser analisado como REFERÊNCIA DE ORGANIZAÇÃO, não assumido como parte do Airbnb Explorer.
+
+RESUMO FINAL: trabalhar sobretudo com as aulas D3 1, 2, 3, 4 e 6. A aula 4 fornece o mapa e a aula 6 fornece a lógica de seleção/filtragem coordenada. O núcleo inicial a construir é MAPA INTERATIVO + HISTOGRAMA + LISTA DE ANÚNCIOS, com filtros sincronizados e dados reais tratados do Inside Airbnb. Depois acrescentar scatterplot, comparação entre bairros e detalhes/compare consoante o tempo.

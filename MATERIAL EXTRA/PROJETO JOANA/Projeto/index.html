@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fire Dashboard - Portugal</title>
+  <!-- Plotly CDN -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #2b2b2b;
+      color: white;
+    }
+    .navbar {
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+      background-color: #1f1f1f;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .nav-btn {
+      background-color: #FFA500;
+      color: black;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 15px;
+      width: 120px;
+      height: 40px;
+      text-align: center;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 2px 2px 6px #333;
+      transition: all 0.2s ease;
+      border: none;
+    }
+    .nav-btn.active {
+      transform: scale(1.15);
+      box-shadow: 4px 4px 12px #555;
+    }
+    .page {
+      display: none;
+      padding: 40px 40px 60px 40px;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .page.active {
+      display: block;
+    }
+    .home-card-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .home-card {
+      background-color: #4da6ff;
+      padding: 20px;
+      border-radius: 15px;
+      margin: 10px;
+      text-align: center;
+      cursor: pointer;
+      width: 250px;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+    }
+    .home-card.orange {
+      background-color: #ff9966;
+    }
+    .home-card.green {
+      background-color: #33cc33;
+    }
+    a.card-link {
+      text-decoration: none;
+      color: inherit;
+    }
+    .filters-box {
+      width: 35%;
+      margin: 10px auto;
+      padding: 20px;
+      border-radius: 15px;
+      background-color: white;
+      color: black;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+    }
+    .flex-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .graph-container {
+      flex: 1;
+      padding: 5px;
+    }
+    .controls-inline {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    select, input {
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      color: white;
+      font-size: 12px;
+    }
+    th, td {
+      border: 1px solid white;
+      padding: 4px 6px;
+      text-align: right;
+    }
+    th {
+      background-color: #444;
+    }
+    .dataset-table-wrapper {
+      overflow-x: auto;
+      padding-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <div class="navbar">
+    <button class="nav-btn active" data-target="home">Home</button>
+    <button class="nav-btn" data-target="datasets">Datasets</button>
+    <button class="nav-btn" data-target="results">Results</button>
+    <button class="nav-btn" data-target="about">About Fires</button>
+  </div>
+
+  <!-- Home Page -->
+  <div id="home" class="page active">
+    <div style="text-align:center; padding:50px 10px;">
+      <h1 style="color:white; font-size:48px; margin-bottom:20px;">
+        Welcome to the Fire Dashboard
+      </h1>
+      <p style="color:white; font-size:20px; margin-bottom:30px;">
+        Explore rural fires in Mainland Portugal. Visualize trends by year, district and fire causes.
+      </p>
+
+      <div class="home-card-container">
+        <div class="home-card">
+          <h3 style="margin-bottom:10px; color:#1a1aff;">🔍 Datasets Info</h3>
+          <p style="font-size:14px; color:#e6e6ff;">
+            Explore the raw data by year and district. Check trends and detailed statistics.
+          </p>
+          <p style="font-size:14px; color:#e6e6ff;">
+            Filter by year, see district-level numbers, and compare fire types.
+          </p>
+        </div>
+
+        <div class="home-card orange">
+          <h3 style="margin-bottom:10px; color:#993300;">📊 Results Overview</h3>
+          <p style="font-size:14px; color:#ffcc99;">
+            Visualize interactive charts and maps to understand fire patterns and burned areas.
+          </p>
+          <p style="font-size:14px; color:#ffcc99;">
+            Compare total fires, burned areas, and causes across years and districts.
+          </p>
+        </div>
+
+        <a class="card-link" href="javascript:void(0);" onclick="switchPage('about')">
+          <div class="home-card green">
+            <h3 style="margin-bottom:10px; color:#006600;">🌿 About Fires</h3>
+            <p style="font-size:14px; color:#ccffcc;">
+              Learn about fire causes, types of vegetation affected, and key insights from the data.
+            </p>
+            <p style="font-size:14px; color:#ccffcc;">
+              Understand how natural, negligent, or intentional fires impact rural areas.
+            </p>
+            <div style="margin-top:10px; font-size:16px; color:white;">
+              ➡️ Click to learn more
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Datasets Page -->
+  <div id="datasets" class="page">
+    <h2 style="text-align:center; margin-top:10px; color:white;">Datasets Overview</h2>
+
+    <div style="width:30%; margin:20px auto;">
+      <label for="dataset-year-select" style="color:white;">Select Year:</label>
+      <select id="dataset-year-select" style="width:100%;"></select>
+    </div>
+
+    <div id="dataset-table-container"></div>
+  </div>
+
+  <!-- Results Page -->
+  <div id="results" class="page">
+    <!-- Filtros principais -->
+    <div class="filters-box">
+      <label style="font-weight:bold;">Select Year(s):</label>
+      <div class="controls-inline" style="margin-top:5px; margin-bottom:10px;">
+        <span>From</span>
+        <input type="number" id="year-min" style="width:80px;">
+        <span>to</span>
+        <input type="number" id="year-max" style="width:80px;">
+      </div>
+
+      <label style="font-weight:bold; margin-top:10px;">Select District:</label>
+      <select id="district-select" multiple size="6" style="width:100%;"></select>
+      <small>Ctrl+click to select multiple. Empty or including "All Districts" shows all.</small>
+    </div>
+
+    <!-- COMPARAÇÃO ENTRE DISTRITOS -->
+    <div style="margin: 40px 0;">
+      <hr style="border-color:#FFA500; margin:40px 0;">
+      <h3 style="color:white; text-align:center;">Compare Burned Areas and Fire Causes Across Districts</h3>
+
+      <!-- Seleção de distritos -->
+      <div style="width:70%; margin: 20px auto;">
+        <label style="color:white;">Select District(s):</label>
+        <select id="multi-district-select" multiple size="6" style="width:100%;"></select>
+        <small>Ctrl+click to select multiple. If "All Districts" is included, all are shown individually.</small>
+      </div>
+
+      <!-- Gráficos lado a lado -->
+      <div class="flex-row">
+        <div class="graph-container">
+          <div id="barras-comparacao" style="height:400px;"></div>
+        </div>
+
+        <div class="graph-container">
+          <!-- Checklist das causas -->
+          <div style="margin-bottom:10px; color:white;">
+            <label><input type="checkbox" class="causa-check" value="Natural" checked> Natural</label>
+            <label><input type="checkbox" class="causa-check" value="Negligent" checked> Negligent</label>
+            <label><input type="checkbox" class="causa-check" value="Intentional" checked> Intentional</label>
+            <label><input type="checkbox" class="causa-check" value="Rekindle" checked> Rekindle</label>
+            <label><input type="checkbox" class="causa-check" value="Unknown" checked> Unknown</label>
+            <label><input type="checkbox" class="causa-check" value="Not Investigated" checked> Not Investigated</label>
+          </div>
+
+          <div id="dotplot-causas" style="height:400px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secção principal de gráficos -->
+    <div class="flex-row">
+      <div class="graph-container" style="flex:50%;">
+        <div id="mapa-incendios" style="height:600px; width:100%;"></div>
+      </div>
+
+      <div class="graph-container" style="flex:50%;">
+        <div id="linha-total" style="height:280px; width:100%; margin-bottom:10px;"></div>
+        <div class="flex-row">
+          <div id="barras-areas" style="height:280px; width:50%;"></div>
+          <div id="spider-causas" style="height:280px; width:50%;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- About Fires Page -->
+  <div id="about" class="page">
+    <h1 style="text-align:center; margin-bottom:30px;">🔥 About Fires in Portugal</h1>
+    <div style="max-width:800px; margin:0 auto; line-height:1.6;">
+      <p style="font-size:18px; margin-bottom:10px;">
+        Portugal experiences frequent rural fires every year, affecting forests, scrublands, and agricultural areas.
+      </p>
+      <p style="font-size:18px; margin-bottom:10px;">
+        The main causes include natural events, human negligence, and sometimes intentional actions.
+      </p>
+      <p style="font-size:18px; margin-bottom:10px;">
+        Understanding these patterns helps in planning prevention strategies and minimizing damage.
+      </p>
+      <p style="font-size:18px; margin-bottom:10px;">
+        Visualizations in this dashboard show trends by year, district, and fire type to give a comprehensive view.
+      </p>
+    </div>
+    <div style="text-align:center; margin-top:30px;">
+      <a href="javascript:void(0);" onclick="switchPage('home')" style="color:#FFA500; font-size:18px;">
+        ⬅️ Back to Home
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // ========= Navegação SPA simples =========
+    function switchPage(targetId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(targetId).classList.add('active');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.target === targetId);
+      });
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchPage(btn.dataset.target));
+    });
+
+    // ========= Dados globais =========
+    let dfTotal = [];    // [{Ano:..., ...}, ...]
+    let dfMap = [];      // [{Distrito, Ano, ...}, ...]
+    let gdfJson = null;  // GeoJSON
+    let anosDisponiveis = [];
+    let distritosDisponiveis = [];
+
+    // ========= Carregar dados JSON / GEOJSON =========
+    async function loadData() {
+      const [dfTotalResp, dfMapResp, geoResp] = await Promise.all([
+        fetch('df_total.json'),
+        fetch('df_map.json'),
+        fetch('distritos_simplificados.geojson')
+      ]);
+
+      dfTotal = await dfTotalResp.json();
+      dfMap = await dfMapResp.json();
+      gdfJson = await geoResp.json();
+
+      // Anos e distritos disponíveis
+      const anosSet = new Set(dfMap.map(d => d.Ano));
+      anosDisponiveis = Array.from(anosSet).sort((a,b) => a - b);
+
+      const distSet = new Set(dfMap.map(d => d.Distrito));
+      distritosDisponiveis = ['All Districts', ...Array.from(distSet).sort()];
+
+      initControls();
+      drawLineTotal();
+      updateAllGraphs();
+      updateDatasetTable();
+    }
+
+    // ========= Inicializar controlos (dropdowns / inputs) =========
+    function initControls() {
+      // Datasets year select
+      const yearSelect = document.getElementById('dataset-year-select');
+      yearSelect.innerHTML = '';
+      anosDisponiveis.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a;
+        opt.textContent = a;
+        yearSelect.appendChild(opt);
+      });
+      yearSelect.value = anosDisponiveis[anosDisponiveis.length - 1];
+      yearSelect.addEventListener('change', updateDatasetTable);
+
+      // Results year min/max
+      const yearMinInput = document.getElementById('year-min');
+      const yearMaxInput = document.getElementById('year-max');
+      yearMinInput.value = anosDisponiveis[0];
+      yearMaxInput.value = anosDisponiveis[anosDisponiveis.length - 1];
+      yearMinInput.min = anosDisponiveis[0];
+      yearMaxInput.min = anosDisponiveis[0];
+      yearMinInput.max = anosDisponiveis[anosDisponiveis.length - 1];
+      yearMaxInput.max = anosDisponiveis[anosDisponiveis.length - 1];
+
+      yearMinInput.addEventListener('change', () => {
+        updateAllGraphs();
+        updateComparacaoDistritos();
+      });
+      yearMaxInput.addEventListener('change', () => {
+        updateAllGraphs();
+        updateComparacaoDistritos();
+      });
+
+      // District multiselect (filtros principais)
+      const distSel = document.getElementById('district-select');
+      distSel.innerHTML = '';
+      distritosDisponiveis.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        distSel.appendChild(opt);
+      });
+      distSel.value = ['All Districts']; // default
+      distSel.addEventListener('change', () => {
+        updateAllGraphs();
+        updateComparacaoDistritos();
+      });
+
+      // MULTI-DISTRICT SELECT (COMPARAÇÃO)
+      const multiDistSel = document.getElementById('multi-district-select');
+      multiDistSel.innerHTML = '';
+      distritosDisponiveis.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        multiDistSel.appendChild(opt);
+      });
+      multiDistSel.value = ['All Districts'];
+      multiDistSel.addEventListener('change', updateComparacaoDistritos);
+
+      // Checkboxes das causas
+      document.querySelectorAll(".causa-check").forEach(cb => {
+        cb.addEventListener("change", updateDotplotCausas);
+      });
+    }
+
+    function getSelectedYears() {
+      const yearMin = parseInt(document.getElementById('year-min').value);
+      const yearMax = parseInt(document.getElementById('year-max').value);
+      const ys = [];
+      for (let y = yearMin; y <= yearMax; y++) {
+        if (anosDisponiveis.includes(y)) ys.push(y);
+      }
+      return ys;
+    }
+
+    function getSelectedDistricts() {
+      const distSel = document.getElementById('district-select');
+      const selected = Array.from(distSel.selectedOptions).map(o => o.value);
+      if (selected.length === 0 || selected.includes('All Districts')) {
+        return ['All Districts'];
+      }
+      return selected;
+    }
+
+    // ========= Gráfico de linhas total (fixo) =========
+    function drawLineTotal() {
+      if (!dfTotal.length) return;
+
+      // assume df_total tem colunas [Ano, Num_Incendios]
+      const colNames = Object.keys(dfTotal[0]); // ex: ['Ano', 'Num_IncendiosRurais']
+      const xcol = colNames[0];
+      const ycol = colNames[1];
+
+      const x = dfTotal.map(d => d[xcol]);
+      const y = dfTotal.map(d => d[ycol]);
+
+      const trace = {
+        x: x,
+        y: y,
+        mode: 'lines+markers',
+        name: 'Total Fires'
+      };
+
+      const layout = {
+        title: { text: 'Total Fires in Mainland Portugal', x: 0.5 },
+        xaxis: { title: 'Year' },
+        yaxis: { title: 'Number of Fires' },
+        margin: { t: 40, r: 20, l: 60, b: 40 },
+        paper_bgcolor: '#2b2b2b',
+        plot_bgcolor: '#2b2b2b',
+        font: { color: 'white', size: 12 }
+      };
+
+      Plotly.newPlot('linha-total', [trace], layout, {responsive: true});
+    }
+
+    // ========= Atualizar TODOS os gráficos principais =========
+    function updateAllGraphs() {
+      const years = getSelectedYears();
+      if (!years.length) return;
+      const districts = getSelectedDistricts();
+
+      updateMapa(years, districts);
+      updateBarrasAreas(years, districts);
+      updateSpiderCausas(years, districts);
+    }
+
+    // ========= Mapa coroplético =========
+    function updateMapa(selectedYears, selectedDistricts) {
+      const allDistricts = selectedDistricts.includes('All Districts');
+
+      let dfFiltered = dfMap.filter(d => selectedYears.includes(d.Ano));
+      if (!allDistricts) {
+        const setLower = new Set(selectedDistricts.map(d => d.toLowerCase()));
+        dfFiltered = dfFiltered.filter(d => setLower.has(d.Distrito.toLowerCase()));
+      }
+
+      // Agregar se for All Districts: soma por distrito
+      const firesByDistrict = {};
+      dfFiltered.forEach(d => {
+        const key = d.Distrito.toLowerCase();
+        firesByDistrict[key] = (firesByDistrict[key] || 0) + (d.Num_IncendiosRurais || 0);
+      });
+
+      const distritos = Object.keys(firesByDistrict);
+      const values = distritos.map(k => firesByDistrict[k]);
+
+      const anosTexto = `${Math.min(...selectedYears)}–${Math.max(...selectedYears)}`;
+
+      const data = [{
+        type: 'choropleth',
+        geojson: gdfJson,
+        locations: distritos,
+        z: values,
+        featureidkey: 'properties.NAME_1',
+        colorscale: 'Reds',
+        colorbar: { title: 'Number of Fires' },
+        hovertemplate: '%{location}<br>Fires: %{z}<extra></extra>'
+      }];
+
+      const layout = {
+        title: { text: `Rural Fires by District — ${anosTexto}`, x: 0.5 },
+        geo: {
+          scope: 'europe',
+          fitbounds: 'locations',
+          showcountries: false,
+          showland: true,
+          landcolor: '#222',
+          projection: { type: 'mercator' }
+        },
+        margin: { t: 40, r: 0, l: 0, b: 0 },
+        paper_bgcolor: '#2b2b2b',
+        plot_bgcolor: '#2b2b2b',
+        font: { color: 'white' }
+      };
+
+      Plotly.newPlot('mapa-incendios', data, layout, {responsive: true}).then(() => {
+        // LIGAR CLIQUE AOS DISTRITOS
+        const mapaDiv = document.getElementById("mapa-incendios");
+        mapaDiv.on('plotly_click', function(event){
+          const clicked = event.points?.[0]?.location;
+          if (!clicked) return;
+
+          const districtTitle = clicked.charAt(0).toUpperCase() + clicked.slice(1);
+
+          const distSel = document.getElementById("district-select");
+          const current = Array.from(distSel.selectedOptions).map(o => o.value);
+
+          // Se já estiver selecionado → voltar para All Districts
+          if (current.includes(districtTitle)) {
+            distSel.value = ['All Districts'];
+          } else {
+            distSel.value = [districtTitle];
+          }
+
+          updateAllGraphs();
+          updateComparacaoDistritos();
+        });
+      });
+    }
+
+    // ========= Barras: área ardida =========
+    function updateBarrasAreas(selectedYears, selectedDistricts) {
+      const allDistricts = selectedDistricts.includes('All Districts');
+
+      let dfFiltered = dfMap.filter(d => selectedYears.includes(d.Ano));
+      if (!allDistricts) {
+        const setLower = new Set(selectedDistricts.map(d => d.toLowerCase()));
+        dfFiltered = dfFiltered.filter(d => setLower.has(d.Distrito.toLowerCase()));
+      }
+
+      const areaCols = [
+        'AreaArdPov_NoDistrito',
+        'AreaArdMato_NoDistrito',
+        'AreaArdAgric_NoDistrito'
+      ];
+      const labels = ['Forest', 'Scrubland', 'Agricultural'];
+
+      const sums = [0,0,0];
+      dfFiltered.forEach(d => {
+        areaCols.forEach((col, i) => {
+          const val = Number(d[col]) || 0;
+          sums[i] += val;
+        });
+      });
+
+      const distrTexto = allDistricts ? 'All Districts'
+        : selectedDistricts.join(', ');
+
+      const anosTexto = `${Math.min(...selectedYears)}–${Math.max(...selectedYears)}`;
+
+      const trace = {
+        x: labels,
+        y: sums,
+        type: 'bar',
+        text: sums.map(v => Math.round(v)),
+        textposition: 'auto'
+      };
+
+      const layout = {
+        title: { text: `Burned Area by Fire Type — ${distrTexto}<br>(${anosTexto})`, x: 0.5 },
+        margin: { t: 80, r: 20, l: 60, b: 40 },
+        paper_bgcolor: '#2b2b2b',
+        plot_bgcolor: '#2b2b2b',
+        font: { color: 'white', size: 12 },
+        xaxis: { title: '' },
+        yaxis: { title: 'Burned Area (ha)' }
+      };
+
+      Plotly.newPlot('barras-areas', [trace], layout, {responsive: true});
+    }
+
+    // ========= Spider chart: causas =========
+    function updateSpiderCausas(selectedYears, selectedDistricts) {
+      const allDistricts = selectedDistricts.includes('All Districts');
+
+      let dfFiltered = dfMap.filter(d => selectedYears.includes(d.Ano));
+      if (!allDistricts) {
+        const setLower = new Set(selectedDistricts.map(d => d.toLowerCase()));
+        dfFiltered = dfFiltered.filter(d => setLower.has(d.Distrito.toLowerCase()));
+      }
+
+      const causasCols = [
+        'NInc_Natural',
+        'NInc_Negligente',
+        'NInc_Intencionais',
+        'NInc_Reacendimentos',
+        'NInc_Desconhecida',
+        'NInc_NaoInvestigados'
+      ];
+      const causasLabels = [
+        'Natural', 'Negligent', 'Intentional',
+        'Rekindle', 'Unknown', 'Not Investigated'
+      ];
+
+      const sums = new Array(causasCols.length).fill(0);
+      dfFiltered.forEach(d => {
+        causasCols.forEach((col, i) => {
+          const val = Number(d[col]) || 0;
+          sums[i] += val;
+        });
+      });
+
+      const distrTexto = allDistricts ? 'All Districts'
+        : selectedDistricts.join(', ');
+      const anosTexto = `${Math.min(...selectedYears)}–${Math.max(...selectedYears)}`;
+
+      const trace = {
+        type: 'scatterpolar',
+        r: sums,
+        theta: causasLabels,
+        fill: 'toself',
+        name: 'Causes'
+      };
+
+      const layout = {
+        title: { text: `Fire Causes — ${distrTexto}<br>(${anosTexto})`, x: 0.5 },
+        polar: {
+          radialaxis: { visible: true }
+        },
+        margin: { t: 80, r: 40, l: 40, b: 40 },
+        paper_bgcolor: '#2b2b2b',
+        font: { color: 'white', size: 12 }
+      };
+
+      Plotly.newPlot('spider-causas', [trace], layout, {responsive: true});
+    }
+
+    // ========= Gráfico de comparação entre distritos =========
+    function updateComparacaoDistritos() {
+      const distSel = document.getElementById('multi-district-select');
+      let selected = Array.from(distSel.selectedOptions).map(o => o.value);
+
+      const years = getSelectedYears();
+      if (!years.length) return;
+
+      if (selected.includes("All Districts") || selected.length === 0) {
+        selected = distritosDisponiveis.slice(1); // todos menos All Districts
+      }
+
+      const dfFiltered = dfMap.filter(d => years.includes(d.Ano));
+
+      let data = [];
+      selected.forEach(dist => {
+        const dfDist = dfFiltered.filter(d => d.Distrito === dist);
+
+        const vals = {
+          Forest: 0,
+          Scrubland: 0,
+          Agricultural: 0
+        };
+
+        dfDist.forEach(d => {
+          vals.Forest += Number(d.AreaArdPov_NoDistrito) || 0;
+          vals.Scrubland += Number(d.AreaArdMato_NoDistrito) || 0;
+          vals.Agricultural += Number(d.AreaArdAgric_NoDistrito) || 0;
+        });
+
+        data.push({
+          x: ["Forest", "Scrubland", "Agricultural"],
+          y: [vals.Forest, vals.Scrubland, vals.Agricultural],
+          type: "bar",
+          name: dist
+        });
+      });
+
+      const anosTexto = `${Math.min(...years)}–${Math.max(...years)}`;
+
+      const layout = {
+        barmode: "group",
+        title: { text: `Burned Area by Type per District<br>(${anosTexto})`, x: 0.5 },
+        paper_bgcolor: "#2b2b2b",
+        plot_bgcolor: "#2b2b2b",
+        font: { color: "white" },
+        margin: { t: 80 },
+        xaxis: { title: "Type" },
+        yaxis: { title: "Burned Area (ha)" }
+      };
+
+      Plotly.newPlot("barras-comparacao", data, layout, { responsive: true });
+
+      updateDotplotCausas();
+    }
+
+    // ========= Dotplot de causas =========
+    function updateDotplotCausas() {
+      const distSel = document.getElementById('multi-district-select');
+      let selected = Array.from(distSel.selectedOptions).map(o => o.value);
+
+      const years = getSelectedYears();
+      if (!years.length) return;
+
+      const causasSelecionadas = Array.from(
+        document.querySelectorAll(".causa-check:checked")
+      ).map(c => c.value);
+
+      if (selected.includes("All Districts") || selected.length === 0) {
+        selected = distritosDisponiveis.slice(1);
+      }
+
+      const dfFiltered = dfMap.filter(d => years.includes(d.Ano));
+
+      const causeMap = {
+        "NInc_Natural": "Natural",
+        "NInc_Negligente": "Negligent",
+        "NInc_Intencionais": "Intentional",
+        "NInc_Reacendimentos": "Rekindle",
+        "NInc_Desconhecida": "Unknown",
+        "NInc_NaoInvestigados": "Not Investigated"
+      };
+
+      let rows = [];
+
+      selected.forEach(dist => {
+        const dfDist = dfFiltered.filter(d => d.Distrito === dist);
+
+        const causeTotals = {
+          Natural: 0,
+          Negligent: 0,
+          Intentional: 0,
+          Rekindle: 0,
+          Unknown: 0,
+          "Not Investigated": 0
+        };
+
+        dfDist.forEach(r => {
+          Object.keys(causeMap).forEach(col => {
+            const friendly = causeMap[col];
+            causeTotals[friendly] += Number(r[col]) || 0;
+          });
+        });
+
+        causasSelecionadas.forEach(caus => {
+          rows.push({
+            Distrito: dist,
+            Causa: caus,
+            Valor: causeTotals[caus]
+          });
+        });
+      });
+
+      // Agrupar por causa para cores consistentes
+      const causaGroups = {};
+      rows.forEach(r => {
+        if (!causaGroups[r.Causa]) causaGroups[r.Causa] = { x: [], y: [], name: r.Causa };
+        causaGroups[r.Causa].x.push(r.Valor);
+        causaGroups[r.Causa].y.push(r.Distrito);
+      });
+
+      const data = Object.values(causaGroups).map(g => ({
+        type: "scatter",
+        mode: "markers",
+        x: g.x,
+        y: g.y,
+        name: g.name,
+        marker: { size: 10 }
+      }));
+
+      const anosTexto = `${Math.min(...years)}–${Math.max(...years)}`;
+
+      const layout = {
+        title: { text: `Fire Causes Across Districts<br>(${anosTexto})`, x: 0.5 },
+        xaxis: { title: "Number of Fires" },
+        yaxis: { title: "District" },
+        paper_bgcolor: "#2b2b2b",
+        plot_bgcolor: "#2b2b2b",
+        font: { color: "white" },
+        margin: { t: 80 }
+      };
+
+      Plotly.newPlot("dotplot-causas", data, layout, { responsive: true });
+    }
+
+    // ========= Tabela Datasets =========
+    function updateDatasetTable() {
+      const container = document.getElementById('dataset-table-container');
+      const selectedYear = parseInt(document.getElementById('dataset-year-select').value);
+      if (!selectedYear) return;
+
+      // Estatísticas por distrito
+      const dfDistritoFiltered = dfMap.filter(d => d.Ano === selectedYear);
+
+      if (!dfDistritoFiltered.length) {
+        container.innerHTML = '<p style="color:white;">No data for selected year.</p>';
+        return;
+      }
+
+      const cols = Object.keys(dfDistritoFiltered[0]);
+      const htmlRows = [];
+
+      // Cabeçalho
+      let headerRow = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+      htmlRows.push(headerRow);
+
+      // Linhas
+      dfDistritoFiltered.forEach(row => {
+        const cells = cols.map(c => `<td>${row[c]}</td>`).join('');
+        htmlRows.push(`<tr>${cells}</tr>`);
+      });
+
+      const tableHtmlDistrito = `
+        <h4 style="color:white; margin-bottom:10px;">Estatísticas por Distrito</h4>
+        <div class="dataset-table-wrapper">
+          <table>${htmlRows.join('')}</table>
+        </div>
+      `;
+
+      // Estatísticas Portugal Continental (df_total)
+      const colTot = Object.keys(dfTotal[0] || {});
+      if (!colTot.length) {
+        container.innerHTML = tableHtmlDistrito;
+        return;
+      }
+      const anoCol = colTot[0];
+      const dfPortugalFiltered = dfTotal.filter(d => d[anoCol] === selectedYear);
+
+      let rowsPortugal = [];
+      if (dfPortugalFiltered.length) {
+        let headerPt = '<tr>' + colTot.map(c => `<th>${c}</th>`).join('') + '</tr>';
+        rowsPortugal.push(headerPt);
+
+        dfPortugalFiltered.forEach(row => {
+          const cells = colTot.map(c => `<td>${row[c]}</td>`).join('');
+          rowsPortugal.push(`<tr>${cells}</tr>`);
+        });
+      }
+
+      const tableHtmlPortugal = `
+        <h4 style="color:white; margin-bottom:10px;">Estatísticas Portugal Continental</h4>
+        <div class="dataset-table-wrapper">
+          <table>${rowsPortugal.join('')}</table>
+        </div>
+      `;
+
+      container.innerHTML = tableHtmlDistrito + '<hr>' + tableHtmlPortugal;
+    }
+
+    // ========= Iniciar =========
+    loadData().catch(err => {
+      console.error('Erro a carregar dados:', err);
+      alert('Erro a carregar dados. Verifica se os ficheiros df_total.json, df_map.json e distritos_simplificados.geojson estão na mesma pasta do HTML.');
+    });
+  </script>
+</body>
+</html>

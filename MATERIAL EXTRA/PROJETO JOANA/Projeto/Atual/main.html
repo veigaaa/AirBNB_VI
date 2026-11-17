@@ -1,0 +1,315 @@
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+<style>
+  /* ====== GLOBAL ====== */
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f4f4f4;
+  }
+
+  h1 { margin-bottom: 10px; }
+
+  /* ====== MAIN PAGE GRID ====== */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 20px;
+    width: 100%;
+    align-items: start;
+  }
+
+  /* MAPA */
+  .left-map { width: 100%; }
+
+  #main-map {
+    width: 100%;
+    height: calc(100vh - 90px) !important;
+  }
+
+  /* RIGHT COLUMN */
+  .right-column {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .chart-box { padding: 0; background: transparent; }
+
+  .dual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+
+  .small-chart { height: 240px; }
+</style>
+
+<div id="main" class="page active">
+  <h1>Main Page</h1>
+
+  <div class="main-layout">
+
+    <!-- MAPA -->
+    <div class="left-map">
+      <label><b>Select year:</b></label>
+      <select id="main-year"></select>
+      <div id="main-map" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-column">
+
+      <div class="chart-box">
+        <div id="chart-total-fires" style="height:240px;"></div>
+      </div>
+
+      <div class="dual">
+        <div class="chart-box small-chart">
+          <div id="chart-burned-area" style="height:220px;"></div>
+        </div>
+
+        <div class="chart-box small-chart">
+          <div id="chart-causes" style="height:220px;"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+console.log("main.html loaded");
+
+let dfMap = [];
+let gdfJson = null;
+let anos = [];
+
+/* ==========================
+     LOAD DATA
+========================== */
+async function loadData() {
+  let raw = await (await fetch("incendios_all.json")).json();
+    dfMap = raw["Estatisticas_Distrito"];
+  gdfJson = await (await fetch("portugal.geojson")).json();
+  anos = [...new Set(dfMap.map(r => r.Ano))].sort((a,b)=>a-b);
+
+  initMainYearSelector();
+  updateDashboard();
+}
+
+/* ==========================
+     DRAW MAP
+========================== */
+function drawMap() {
+  const year = Number(document.getElementById("main-year").value);
+  const dataYear = dfMap.filter(r => r.Ano === year);
+
+  const sum = {};
+  dataYear.forEach(r => {
+    const k = (r.Distrito || "").trim();
+    sum[k] = (sum[k] || 0) + Number(r.Num_IncendiosRurais || 0);
+  });
+
+  const distritos = Object.keys(sum);
+  const valores   = Object.values(sum);
+
+  const districtCenters = {
+    "Aveiro": { lon: -8.5377, lat: 40.7318 },
+    "Beja": { lon: -7.9237, lat: 37.8624 },
+    "Braga": { lon: -8.2908, lat: 41.5264 },
+    "Bragança": { lon: -6.8475, lat: 41.5276 },
+    "Castelo Branco": { lon: -7.6348, lat: 39.9759 },
+    "Coimbra": { lon: -8.2482, lat: 40.1632 },
+    "Évora": { lon: -7.8913, lat: 38.6611 },
+    "Faro": { lon: -8.6312, lat: 37.1857 },
+    "Guarda": { lon: -7.3069, lat: 40.6398 },
+    "Leiria": { lon: -8.7785, lat: 39.6918 },
+    "Lisboa": { lon: -9.3641, lat: 38.802 },
+    "Portalegre": { lon: -7.6137, lat: 39.1288 },
+    "Porto": { lon: -8.4172, lat: 41.2239 },
+    "Santarém": { lon: -8.5138, lat: 39.2212 },
+    "Setúbal": { lon: -8.8777, lat: 38.3332 },
+    "Viana do Castelo": { lon: -8.4957, lat: 41.8473 },
+    "Vila Real": { lon: -7.6618, lat: 41.5674 },
+    "Viseu": { lon: -7.8405, lat: 40.8409 }
+  };
+
+  const labelLon = [];
+  const labelLat = [];
+  const labelText= [];
+
+  distritos.forEach(name => {
+    const c = districtCenters[name];
+    if (c) {
+      labelLon.push(c.lon);
+      labelLat.push(c.lat);
+      labelText.push(name.replace(" ", "<br>"));
+    }
+  });
+
+  const base = {
+    type: "choropleth",
+    geojson: gdfJson,
+    locations: distritos,
+    z: valores,
+    featureidkey: "properties.name",
+    colorscale: "Reds",
+    marker: { line: { width: 0.5, color: "#333" } },
+    hoverinfo: "skip"
+  };
+
+  const highlight = {
+    type: "choropleth",
+    geojson: gdfJson,
+    locations: distritos,
+    z: Array(distritos.length).fill(0),
+    featureidkey: "properties.name",
+    colorscale: [[0,"rgba(0,0,0,0)"],[1,"rgba(0,0,0,0)"]],
+    marker: { line: { width: 0, color: "transparent" } },
+    showscale: false,
+    hovertemplate:
+      "<b>%{location}</b><br>Incêndios: %{customdata}<extra></extra>",
+    customdata: valores
+  };
+
+  const labels = {
+    type: "scattergeo",
+    lon: labelLon,
+    lat: labelLat,
+    text: labelText,
+    mode: "text",
+    textfont: { size: 9, color: "#111" },
+    hoverinfo: "skip"
+  };
+
+  const layout = {
+    geo: {
+      fitbounds: "locations",
+      projection: { type: "mercator" },
+      showcountries: false,
+      showland: true,
+      landcolor: "#eeeeee"
+    },
+    margin: { t:0, r:0, l:0, b:0 }
+  };
+
+  Plotly.newPlot("main-map", [base, highlight, labels], layout)
+    .then(gd => {
+      gd.on("plotly_hover", ev => {
+        const i = ev.points[0].pointIndex;
+        const widths = distritos.map((_,idx)=> idx===i?3:0);
+        const colors = widths.map(w => w ? "yellow" : "transparent");
+
+        Plotly.restyle(gd, {
+          "marker.line.width": [widths],
+          "marker.line.color": [colors]
+        }, [1]);
+      });
+
+      gd.on("plotly_unhover", () => {
+        Plotly.restyle(gd, {
+          "marker.line.width": 0,
+          "marker.line.color": "transparent"
+        }, [1]);
+      });
+    });
+}
+
+
+/* ==========================
+     CHARTS
+========================== */
+function drawTotal() {
+  const totals = anos.map(y =>
+    dfMap.filter(r=>r.Ano==y)
+         .reduce((a,b)=>a+(+b.Num_IncendiosRurais||0),0)
+  );
+
+  Plotly.newPlot("chart-total-fires",[{
+    x:anos,
+    y:totals,
+    mode:"lines+markers",
+    line:{color:"#0050a8", width:2}
+  }],{
+    title:{text:"Total Fires in Mainland Portugal", x:0.02},
+    margin:{t:50,r:20,l:40,b:40}
+  });
+}
+
+function drawBurned() {
+  const year=Number(document.getElementById("main-year").value);
+  const rows=dfMap.filter(r=>r.Ano==year);
+
+  let f=0,s=0,a=0;
+  rows.forEach(r=>{
+    f+= +r.AreaArdPov_NoDistrito||0;
+    s+= +r.AreaArdMato_NoDistrito||0;
+    a+= +r.AreaArdAgric_NoDistrito||0;
+  });
+
+  Plotly.newPlot("chart-burned-area",[{
+    x:["Forest","Scrubland","Agricultural"],
+    y:[f,s,a],
+    type:"bar",
+    marker:{color:["#800","orange","#c9a000"]}
+  }],{
+    title:{text:"Burned Area by Fire Type", x:0.02},
+    margin:{t:50,r:20,l:40,b:40}
+  });
+}
+
+function drawCauses() {
+  const year=Number(document.getElementById("main-year").value);
+  const rows=dfMap.filter(r=>r.Ano==year);
+
+  const t={n:0,ne:0,i:0,r:0,u:0,ni:0};
+  rows.forEach(r=>{
+    t.n+= +r.NInc_Natural||0;
+    t.ne+= +r.NInc_Negligente||0;
+    t.i+= +r.NInc_Intencionais||0;
+    t.r+= +r.NInc_Reacendimentos||0;
+    t.u+= +r.NInc_Desconhecida||0;
+    t.ni+= +r.NInc_NaoInvestigados||0;
+  });
+
+  Plotly.newPlot("chart-causes",[{
+    type:"scatterpolar",
+    r:Object.values(t),
+    theta:["Natural","Negligent","Intentional","Rekindle","Unknown","Not Investigated"],
+    fill:"toself",
+    line:{color:"#0050a8", width:2}
+  }],{
+    title:{text:"Fire Causes", x:0.02},
+    margin:{t:50,r:10,l:10,b:10},
+    polar:{radialaxis:{visible:true}},
+    showlegend:false
+  });
+}
+
+/* ==========================
+     INIT
+========================== */
+function initMainYearSelector() {
+  const sel=document.getElementById("main-year");
+  anos.forEach(a=>{
+    const opt=document.createElement("option");
+    opt.value=a;
+    opt.textContent=a;
+    sel.appendChild(opt);
+  });
+  sel.onchange=updateDashboard;
+}
+
+function updateDashboard() {
+  drawMap();
+  drawTotal();
+  drawBurned();
+  drawCauses();
+}
+
+loadData();
+</script>

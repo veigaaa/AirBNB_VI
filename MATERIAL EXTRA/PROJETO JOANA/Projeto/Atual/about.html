@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>About – Fire Dashboard Portugal</title>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 25px 35px;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f4f4f4;
+    }
+
+    h1 { margin-bottom: 15px; }
+
+    .section {
+      background: #ffffff;
+      padding: 18px 22px;
+      border-radius: 10px;
+      margin-bottom: 22px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .section h2 {
+      margin-top: 0;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .section p {
+      font-size: 14px;
+      line-height: 1.45;
+      margin: 0 0 10px 0;
+    }
+
+    ul { margin: 5px 0 0 20px; font-size: 14px; }
+  </style>
+</head>
+
+<body>
+
+<h1>About This Dashboard</h1>
+
+<p>
+  This dashboard provides an interactive and multi-view analysis of wildfires in mainland Portugal.
+  Below is a summary of each page and the visualization techniques used.
+</p>
+
+<!-- =============================================================== -->
+<!-- MAIN PAGE -->
+<!-- =============================================================== -->
+<div class="section">
+  <h2>🔥 Main Page</h2>
+
+  <p>The main landing page offers a high-level overview of wildfire activity.</p>
+
+  <ul>
+    <li><b>Choropleth Map</b> – Shows total rural fires per district for the selected year. Includes hover highlight and dynamic boundaries. (Plotly) </li>
+    <li><b>Total Fires Over Time</b> – Line chart showing annual counts of rural fires. (Plotly) </li>
+    <li><b>Burned Area by Land Type</b> – Bar chart comparing forest, scrubland and agricultural burned area. (Plotly) </li>
+    <li><b>Fire Causes (Radar)</b> – Mini spider chart showing aggregated causes for the selected year. (Plotly Polar)</li>
+  </ul>
+</div>
+
+<!-- =============================================================== -->
+<!-- DATASET PAGE -->
+<!-- =============================================================== -->
+<div class="section">
+  <h2>📁 Dataset</h2>
+
+  <p>A tabular view of the complete wildfire dataset.</p>
+
+  <ul>
+    <li><b>Interactive Year Selector</b> – Loads district-level data for the chosen year.</li>
+    <li><b>Auto-generated Table</b> – Dynamically creates a HTML table with all available variables. </li>
+  </ul>
+
+  <p><b>Legend of main dataset fields:</b></p>
+  <ul>
+    <li><b>Ano</b> – Year of recorded fires</li>
+    <li><b>Distrito</b> – Administrative district</li>
+    <li><b>Num_IncendiosRurais</b> – Number of rural fires</li>
+    <li><b>NInc_Natural / Negligente / Intencionais…</b> – Number of fires by cause category</li>
+    <li><b>AreaArdPov / Mato / Agric</b> – Burned area by land type</li>
+    <li><b>NIncRur_X_Yha</b> – Fires grouped by burned area class</li>
+  </ul>
+</div>
+
+<!-- =============================================================== -->
+<!-- BURNED AREA PAGE -->
+<!-- =============================================================== -->
+<div class="section">
+  <h2>🔥 Burned Area Analysis</h2>
+
+  <p>This page explores burned area patterns at both district and national scale.</p>
+
+  <ul>
+    <li><b>Choropleth Map</b> – Shows fire counts per district, with click-to-select interaction for district-specific analysis. </li>
+
+    <li><b>Stacked Bar Chart</b> – Displays total burned area by land use (forest, scrub, agriculture) ordered by severity. </li>
+
+    <li><b>Normalized Burned Area Distribution</b> – Stacked proportional bar chart showing the share of fires across area-burned classes (0–10 ha, 10–50 ha, etc.). Includes opacity control for classes through a slider. </li>
+
+    <li><b>Temporal Mode</b> – When a district is selected, both charts switch to time-series mode. </li>
+  </ul>
+</div>
+
+<!-- =============================================================== -->
+<!-- FIRE CAUSES PAGE -->
+<!-- =============================================================== -->
+<div class="section">
+  <h2>🔥 Fire Causes Analysis</h2>
+
+  <p>A dual-view page combining a dot plot with an interactive multi-line radar chart.</p>
+
+  <ul>
+    <li><b>Dot Plot</b> – D3.js visualization showing cause percentages per year or per district. Sorting, year filters and district filters included. </li>
+
+    <li><b>Spider (Radar) Chart</b> – Multi-select visualization where the user can compare:</li>
+    <ul>
+      <li>multiple years</li>
+      <li>multiple districts</li>
+      <li>or combinations year × district</li>
+    </ul>
+    <p>This version includes automatic resizing and fixed minimum height to prevent clipping. (Plotly Polar) </p>
+  </ul>
+</div>
+
+</body>
+</html>

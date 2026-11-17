@@ -1,0 +1,163 @@
+IDEIA 1 — AIRBNB EXPLORER (SENHORIOS / GESTORES DE ALOJAMENTO LOCAL)
+Projeto: Information Visualisation — Universidade de Aveiro, 2026/2027
+Estado: proposta conceptual para a primeira iteração (26 de outubro de 2026)
+
+1. CONCEITO E MOTIVAÇÃO
+
+Problema:
+Os dados do mercado de alojamento local são numerosos e difíceis de interpretar diretamente em tabelas. Um proprietário que queira anunciar um imóvel no Airbnb pode ter dificuldade em perceber os preços anunciados na sua zona, a concentração da concorrência e a influência das características do imóvel nos preços.
+
+Solução:
+Criar uma aplicação web interativa, desenvolvida com D3.js, para explorar visualmente a oferta de alojamentos Airbnb numa cidade. A aplicação combinará mapas, gráficos comparativos e filtros interligados.
+
+Objetivo principal:
+Ajudar proprietários e gestores de alojamento local a conhecer o posicionamento dos anúncios concorrentes, comparando localização, preços e características dos alojamentos.
+
+Nome provisório: Airbnb Explorer.
+Área geográfica: escolher Lisboa ou Porto (por decidir).
+
+2. PÚBLICO-ALVO E CONTEXTO DE UTILIZAÇÃO
+
+Público principal:
+- Proprietários de alojamento local.
+- Pessoas que ponderam colocar um imóvel no Airbnb.
+- Gestores de alojamentos que querem compreender os anúncios concorrentes.
+
+Cenário de utilização:
+Um proprietário tem um apartamento T1 numa determinada zona e pretende perceber quanto cobram os alojamentos semelhantes, onde há mais concorrência e quais as características associadas a diferentes preços. Abre a aplicação, escolhe a zona e aplica filtros para comparar anúncios.
+
+A aplicação apoia exploração e comparação dos dados disponíveis. Não determina preços ótimos nem prevê receitas ou rentabilidade.
+
+3. PERGUNTAS A QUE A APLICAÇÃO DEVE RESPONDER
+
+- Onde se concentram os alojamentos Airbnb da cidade?
+- Que bairros apresentam os preços medianos anunciados mais elevados?
+- Quanto custam, em termos de preço anunciado por noite, alojamentos semelhantes ao meu?
+- Como variam os preços por tipo de alojamento, número de quartos e capacidade?
+- Existe relação entre preço e classificação dos hóspedes?
+- Como varia a concentração da oferta entre bairros?
+
+4. DADOS A UTILIZAR
+
+Fonte: Inside Airbnb — https://insideairbnb.com/get-the-data/
+Ficheiro principal: listings.csv.gz (versão detalhada da cidade escolhida).
+
+Features iniciais a considerar:
+- id: identificação de cada anúncio.
+- latitude, longitude: localização no mapa.
+- neighbourhood_cleansed: bairro.
+- price: preço anunciado por noite.
+- room_type, property_type: tipo de alojamento/propriedade.
+- accommodates: capacidade de hóspedes.
+- bedrooms, beds: quartos e camas.
+- minimum_nights: estadia mínima.
+- availability_365: número de dias disponíveis nos próximos 365 dias.
+- number_of_reviews, reviews_per_month: volume e frequência de avaliações.
+- review_scores_rating: classificação global.
+- host_is_superhost: estatuto do anfitrião.
+- calculated_host_listings_count: número calculado de anúncios do anfitrião.
+- amenities: comodidades.
+
+A lista de colunas deverá ser confirmada no ficheiro efetivamente escolhido. Não é necessário usar todas as features.
+
+Limitações:
+- price é um preço anunciado, não necessariamente o preço pago.
+- Dias indisponíveis não significam necessariamente noites reservadas.
+- O Inside Airbnb não fornece diretamente receitas, lucro nem ocupação real.
+- Convém identificar valores em falta e preços extremos antes de agregar.
+
+5. TRÊS VISUALIZAÇÕES PROPOSTAS
+
+A) MAPA INTERATIVO DE ALOJAMENTOS
+Objetivo: localizar anúncios e perceber a distribuição/concentração geográfica.
+Features: latitude, longitude, neighbourhood_cleansed, price, room_type.
+Interações: seleção de bairro ou anúncio, zoom, filtros por tipo e preço.
+
+B) GRÁFICO DE BARRAS — PREÇO MEDIANO POR BAIRRO
+Objetivo: comparar preços anunciados entre bairros e entre alojamentos equivalentes.
+Features: neighbourhood_cleansed, price, room_type, bedrooms.
+Interações: ordenar bairros e atualizar valores segundo os filtros.
+Escolher a mediana para reduzir o impacto de preços extremos.
+
+C) GRÁFICO DE DISPERSÃO — PREÇO VS. AVALIAÇÃO OU CARACTERÍSTICAS
+Objetivo: explorar relações, por exemplo, entre preço anunciado e review_scores_rating, ou entre preço e capacidade.
+Features: price, review_scores_rating, number_of_reviews, accommodates, bedrooms, room_type.
+Interações: tooltip com detalhes, seleção de anúncios, filtros.
+Nota: os anúncios sem avaliação não devem ser tratados como tendo nota zero.
+
+Interação central:
+As três visualizações devem estar ligadas (cross-filtering). Exemplo: ao selecionar um bairro no mapa, as barras e o gráfico de dispersão mostram apenas os anúncios desse bairro. Princípio: Overview First, Zoom and Filter, Details on Demand.
+
+6. PROTÓTIPO DE BAIXA FIDELIDADE
+
+Opções:
+- Papel: desenhos dos ecrãs, trocando folhas/elementos para simular filtros.
+- Figma: wireframes simples e ligações clicáveis entre estados (opção recomendada se houver tempo).
+- Balsamiq: wireframes rápidos com aspeto de esboço.
+
+Desenhar quatro estados do mesmo dashboard:
+1. Visão geral com mapa, gráficos e filtros.
+2. Um bairro selecionado, com atualização das visualizações.
+3. Filtro por tipo de alojamento/quartos e intervalo de preço.
+4. Detalhes de um anúncio após clicar no mapa ou gráfico.
+
+O protótipo não tem de usar dados reais nem estar desenvolvido em D3.js. O objetivo é testar organização, compreensão e interações.
+
+7. TESTES DE USABILIDADE
+
+Tarefas sugeridas para colegas/utilizadores:
+1. Encontrar o bairro com preço mediano mais elevado.
+2. Filtrar alojamentos de um quarto numa zona escolhida.
+3. Comparar preços de alojamentos semelhantes e consultar detalhes de um anúncio.
+
+Registar:
+- Se cada tarefa foi concluída.
+- Dificuldades ou confusões durante a navegação.
+- Se os gráficos foram interpretados corretamente.
+- Comentários dos participantes e melhorias propostas.
+
+8. TRATAMENTO DE DADOS
+
+Criar um ficheiro reduzido e tratado para a aplicação, por exemplo airbnb_clean.csv ou airbnb_clean.json, mantendo sempre os dados originais.
+
+Processamento proposto (Python/Pandas ou equivalente):
+- Selecionar somente as features úteis.
+- Converter preços de texto para valores numéricos.
+- Tratar preços inválidos e valores em falta segundo regras documentadas.
+- Garantir formatos e categorias consistentes.
+- Confirmar a cidade e o número de anúncios.
+- Criar, se for útil, preço por hóspede ou agregados por bairro.
+- Documentar as transformações realizadas.
+
+Não é obrigatório ter o dataset final tratado para a primeira iteração, mas convém identificar as colunas, conhecer os valores em falta e testar a viabilidade das visualizações. Evitar um dataset de visualização superior a 100 MB, como recomendado no enunciado.
+
+9. PLANO PARA A PRIMEIRA ITERAÇÃO
+
+19–20 outubro: fechar problema, público-alvo, contexto e perguntas.
+20–21 outubro: escolher cidade e caracterizar os dados.
+21–22 outubro: escolher e justificar as três visualizações.
+22–23 outubro: desenhar protótipo em papel/Figma/Balsamiq.
+23–24 outubro: realizar testes de usabilidade.
+24–25 outubro: melhorar o protótipo e preparar apresentação.
+26 outubro: apresentação conceptual de menos de cinco minutos e testes previstos em aula.
+
+10. ENTREGÁVEIS / CHECKLIST
+
+[ ] Problema e motivação claramente definidos.
+[ ] Público-alvo e cenário de utilização.
+[ ] Questões de exploração visual.
+[ ] Dataset escolhido, fonte e features relevantes.
+[ ] Três visualizações distintas, com justificação.
+[ ] Estratégia de interatividade entre os gráficos.
+[ ] Protótipo de baixa fidelidade.
+[ ] Tarefas de usabilidade e registo dos testes.
+[ ] Apresentação com menos de cinco minutos.
+
+11. DECISÕES AINDA POR TOMAR
+
+- Lisboa ou Porto?
+- Confirmar se o público-alvo principal será exclusivamente proprietários/gestores.
+- Terceiro gráfico: preço vs. avaliação ou preço vs. capacidade?
+- Protótipo em papel, Figma ou Balsamiq?
+
+Nota: esta é uma ideia de projeto, não uma especificação final. Conforme o enunciado, a segunda iteração integra os resultados dos testes e envolve a implementação em D3.js. O uso de ferramentas de IA deve ser declarado na apresentação final.
