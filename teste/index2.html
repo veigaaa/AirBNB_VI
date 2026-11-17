@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Airbnb Explorer · Versão 2</title>
+  <link rel="stylesheet" href="../Projeto/style.css">
+  <link rel="stylesheet" href="style2.css">
+</head>
+<body>
+  <header>
+    <p class="brand">Airbnb Explorer <span class="version">Versão experimental</span></p>
+    <button class="secondary" id="go-home" type="button" hidden>Página inicial</button>
+  </header>
+  <main>
+    <div class="intro">
+      <section id="home-view" aria-labelledby="intro-title">
+        <h1 id="intro-title">Explorar o mercado</h1>
+        <p class="description">Conheça os preços e a concorrência no mercado de alojamento local para apoiar as suas decisões como investidor ou proprietário.</p>
+        <p class="city-label" id="city-label">Escolha a cidade que pretende analisar</p>
+        <div class="cities" role="group" aria-labelledby="city-label">
+          <button class="city" type="button" data-city="Lisboa">Lisboa</button>
+          <button class="city" type="button" data-city="Porto">Porto</button>
+        </div>
+        <p class="source-note">Dados Inside Airbnb · concelhos de Lisboa e Porto</p>
+      </section>
+
+      <section id="dashboard-view" aria-labelledby="dashboard-title" hidden>
+        <div class="dashboard-heading">
+          <div><h1 id="dashboard-title" tabindex="-1">Explorar a concorrência</h1><p class="description">Selecione uma freguesia para explorar os alojamentos no mapa.</p></div>
+          <label>Cidade <select id="city-select"><option>Lisboa</option><option>Porto</option></select></label>
+        </div>
+        <form id="filters" class="filters" aria-label="Filtros de anúncios">
+          <p>Freguesia <strong id="active-parish">Todas · selecione no mapa</strong></p>
+          <label>Tipo de alojamento <select id="room-type"><option value="">Todos os tipos</option></select></label>
+          <label>Preço máximo por noite (€) <input id="max-price" type="number" min="0" step="any" placeholder="Sem limite" inputmode="decimal"></label>
+          <button class="secondary" id="clear-filters" type="button">Limpar filtros</button>
+        </form>
+        <p id="filter-summary" role="status"></p>
+        <section class="map-section" id="map-section" aria-label="Mapa e anúncios">
+          <section class="map-panel" aria-labelledby="map-title">
+            <div class="map-heading">
+              <h2 id="map-title">Freguesias</h2>
+              <button class="secondary" id="reset-view" type="button" disabled>Vista geral da cidade</button>
+            </div>
+            <p id="map-status" role="status"></p>
+            <div class="map-canvas">
+              <svg id="map" viewBox="0 0 800 600" role="group" aria-label="Mapa de freguesias" hidden></svg>
+              <div class="zoom-controls" role="group" aria-label="Zoom do mapa">
+                <button class="secondary" id="zoom-in" type="button" aria-label="Aproximar mapa" disabled>+</button>
+                <button class="secondary" id="zoom-out" type="button" aria-label="Afastar mapa" disabled>−</button>
+              </div>
+            </div>
+            <div class="density-legend" id="density-legend" hidden>
+              <p id="legend-title">Densidade de anúncios · anúncios/km²</p>
+              <ul id="legend-values"></ul>
+              <p class="legend-note">Total de anúncios por área de freguesia, independentemente dos filtros. Intervalos próprios de cada cidade. Área aproximada a partir dos polígonos GeoJSON.</p>
+            </div>
+            <p id="parish-name">Passe o rato sobre uma freguesia para ver os valores. Clique para selecionar.</p>
+            <p class="map-help">Use a roda do rato ou os botões + e − para ampliar. Arraste para deslocar. Os pontos surgem apenas na freguesia selecionada; clique num ponto para ver os detalhes.</p>
+          </section>
+          <section class="results-panel" aria-labelledby="results-title">
+            <h2 id="results-title">Anúncios encontrados</h2>
+            <p id="result-count" role="status"></p>
+            <div class="listing-scroll" id="listing-scroll" role="region" aria-label="Lista de anúncios" tabindex="0"><ul id="listing-list"></ul></div>
+            <nav class="pagination" aria-label="Páginas de anúncios">
+              <button class="secondary" id="previous-page" type="button" disabled>Anterior</button>
+              <span id="page-label" role="status"></span>
+              <button class="secondary" id="next-page" type="button" disabled>Seguinte</button>
+            </nav>
+          </section>
+        </section>
+        <section id="charts-section" aria-label="Análise dos preços" hidden>
+          <div class="chart-controls">
+            <label><input id="show-extremes" type="checkbox"> Incluir todos os preços na escala dos gráficos</label>
+            <button class="secondary" id="clear-price-range" type="button" disabled>Remover intervalo do histograma</button>
+          </div>
+          <div class="charts">
+            <section class="chart-panel" aria-labelledby="histogram-title">
+              <h2 id="histogram-title">Distribuição dos preços</h2>
+              <p class="chart-help">Arraste no gráfico para selecionar um intervalo de preços. Clique na área vazia para o remover.</p>
+              <svg id="histogram" role="img" aria-label="Histograma de preços por noite"></svg>
+              <p id="histogram-note" class="chart-note" role="status"></p>
+            </section>
+            <section class="chart-panel" aria-labelledby="scatterplot-title">
+              <h2 id="scatterplot-title">Preço e número de avaliações</h2>
+              <p class="chart-help">As avaliações não representam diretamente reservas ou ocupação. Passe o rato sobre um ponto para o identificar.</p>
+              <svg id="scatterplot" role="img" aria-label="Relação entre número de avaliações e preço por noite"></svg>
+              <p id="scatterplot-note" class="chart-note" role="status"></p>
+            </section>
+          </div>
+        </section>
+      </section>
+
+      <section id="details-view" aria-labelledby="details-title" hidden>
+        <button class="secondary" id="back-dashboard" type="button">← Voltar ao dashboard</button>
+        <article class="details-panel">
+          <p id="details-context"></p>
+          <h1 id="details-title" tabindex="-1"></h1>
+          <p class="detail-price" id="details-price"></p>
+          <dl id="details-fields"></dl>
+          <p class="source-note">Informação presente no CSV do Inside Airbnb. Dias disponíveis não medem ocupação efetiva.</p>
+        </article>
+      </section>
+    </div>
+  </main>
+  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="app2.js"></script>
+</body>
+</html>
