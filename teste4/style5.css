@@ -1,0 +1,43 @@
+/* A V5 reutiliza os estilos anteriores e acrescenta apenas estes ajustes. */
+a { color: #20594e; text-underline-offset: 3px; }
+a:focus-visible, summary:focus-visible {
+  outline: 3px solid #27675b;
+  outline-offset: 4px;
+}
+
+.info-link { display: inline-block; text-decoration: none; }
+.header-actions { justify-content: flex-end; }
+.filters label { line-height: 1.5; }
+.filters select, .filters input { min-height: 44px; }
+.map-panel > .chart-help { min-height: 0; margin: 14px 0 0; }
+.chart-help, .chart-note, .map-help, .density-legend .legend-note { font-size: 14px; }
+
+.data-info {
+  margin-top: 36px;
+  padding: 18px 20px;
+  border: 1px solid #dce5df;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: left;
+  scroll-margin-top: 20px;
+}
+
+.data-info summary { color: #20594e; font-size: 16px; font-weight: 700; cursor: pointer; }
+.data-info h2 { margin: 16px 0 10px; font-size: 18px; line-height: 1.5; }
+.data-info p { margin: 14px 0; }
+.data-info ul { padding-left: 22px; }
+.data-info li + li { margin-top: 8px; }
+.data-info a { overflow-wrap: anywhere; }
+.data-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+.data-limitations { margin-top: 20px; padding-top: 4px; border-top: 1px solid #e0e7e3; }
+
+@media (max-width: 900px) {
+  .data-columns { grid-template-columns: 1fr; gap: 0; }
+}
+
+@media (max-width: 560px) {
+  .header-actions { justify-content: flex-start; }
+  .data-info { padding: 16px; }
+}
