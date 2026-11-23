@@ -9,64 +9,206 @@
 <body>
   <header>
     <p class="brand">Airbnb Explorer</p>
+    <nav class="header-actions" aria-label="Navegação">
+      <a class="secondary info-link" id="about-data" href="#data-info">Sobre os dados</a>
+      <button class="secondary" id="compare-open" type="button" disabled>Comparar (0)</button>
+      <button class="secondary" id="go-home" type="button" hidden>Página inicial</button>
+    </nav>
   </header>
-
+  <p id="comparison-status" class="comparison-status" role="status"></p>
   <main>
-    <section class="intro" aria-labelledby="intro-title">
-      <h1 id="intro-title">Explorar o mercado</h1>
-      <p class="description">
-        Conheça os preços e a concorrência no mercado de alojamento local
-        para apoiar as suas decisões como investidor ou proprietário.
-      </p>
+    <div class="intro">
+      <section id="home-view" aria-labelledby="intro-title">
+        <h1 id="intro-title">Explorar o mercado de alojamento local</h1>
+        <p class="description">Explore a concorrência no alojamento local em Lisboa e no Porto: concentração de anúncios, preços por noite e características dos alojamentos.</p>
+        <p class="city-label" id="city-label">Escolha a cidade que pretende analisar</p>
+        <div class="cities" role="group" aria-labelledby="city-label">
+          <button class="city" type="button" data-city="Lisboa">Lisboa</button>
+          <button class="city" type="button" data-city="Porto">Porto</button>
+        </div>
+        <p class="source-note">Fonte: <a href="https://insideairbnb.com/get-the-data/">Inside Airbnb</a></p>
+      </section>
 
-      <p class="city-label" id="city-label">Escolha a cidade que pretende analisar</p>
-      <div class="cities" role="group" aria-labelledby="city-label">
-        <button class="city" type="button" data-city="Lisboa" aria-pressed="false">Lisboa</button>
-        <button class="city" type="button" data-city="Porto" aria-pressed="false">Porto</button>
-      </div>
-
-      <section class="map-section" id="map-section" aria-labelledby="map-title" hidden>
-        <section class="map-panel" aria-labelledby="map-title">
-          <div class="map-heading">
-            <h2 id="map-title">Freguesias</h2>
-            <div class="map-actions">
-              <button class="secondary" id="clear-selection" type="button" disabled>Limpar seleção</button>
-              <button class="secondary" id="reset-view" type="button" disabled>Vista geral</button>
-            </div>
+      <section id="dashboard-view" aria-labelledby="dashboard-title" hidden>
+        <div class="dashboard-heading">
+          <div><h1 id="dashboard-title" tabindex="-1">Explorar a concorrência</h1><p class="description">Selecione uma freguesia para explorar os alojamentos no mapa.</p></div>
+          <label>Cidade <select id="city-select"><option>Lisboa</option><option>Porto</option></select></label>
+        </div>
+        <form id="filters" class="filters" aria-label="Filtros de anúncios">
+          <label>Freguesia <select id="parish-filter"><option value="">Todas as freguesias</option></select></label>
+          <label>Tipo de alojamento <select id="room-type"><option value="">Todos os tipos</option></select></label>
+          <label>Preço mínimo por noite (€) <input id="min-price" type="number" min="0" step="any" placeholder="Sem limite" inputmode="decimal"></label>
+          <label>Preço máximo por noite (€) <input id="max-price" type="number" min="0" step="any" placeholder="Sem limite" inputmode="decimal"></label>
+          <label>Número de quartos <select id="bedrooms-filter"><option value="">Qualquer número</option></select></label>
+          <label>Capacidade mínima (hóspedes) <input id="guests-filter" type="number" min="1" step="1" placeholder="Qualquer"></label>
+          <label>Avaliação mínima (0–5) <input id="rating-filter" type="number" min="0" max="5" step="0.1" placeholder="Qualquer"></label>
+          <label>Estadia mínima exigida: pelo menos (noites) <input id="nights-filter" type="number" min="1" step="1" placeholder="Qualquer"></label>
+          <button class="secondary" id="clear-filters" type="button">Limpar todos os filtros</button>
+        </form>
+        <p id="filter-error" role="alert" hidden></p>
+        <ul id="active-filters" aria-label="Filtros ativos"></ul>
+        <p id="filter-summary" role="status"></p>
+        <p id="selection-status" role="status"></p>
+        <dl class="indicators" aria-label="Indicadores dos anúncios filtrados">
+          <div><dt>Anúncios encontrados</dt><dd id="indicator-count">—</dd></div>
+          <div><dt>Preço mediano por noite</dt><dd id="indicator-median">—</dd></div>
+          <div><dt>Preço médio por noite</dt><dd id="indicator-mean">—</dd></div>
+        </dl>
+        <section id="selected-summary" class="selected-summary" aria-label="Alojamento selecionado" hidden>
+          <p id="selected-name"></p>
+          <div class="card-actions">
+            <button class="secondary" id="selected-details" type="button">Consultar detalhes</button>
+            <button class="secondary" id="selected-compare" type="button">Adicionar à comparação</button>
+            <button class="secondary" id="clear-listing" type="button">Limpar seleção do alojamento</button>
           </div>
-          <p id="map-status" role="status"></p>
-          <div class="map-canvas">
-            <svg id="map" viewBox="0 0 800 600" role="group" aria-label="Mapa de freguesias" hidden></svg>
-            <div class="zoom-controls" role="group" aria-label="Zoom do mapa">
-              <button class="secondary" id="zoom-in" type="button" aria-label="Aproximar mapa" disabled>+</button>
-              <button class="secondary" id="zoom-out" type="button" aria-label="Afastar mapa" disabled>−</button>
-            </div>
-          </div>
-          <div class="density-legend" id="density-legend" hidden>
-            <p id="legend-title">Densidade de anúncios</p>
-            <div id="legend-gradient" aria-hidden="true"></div>
-            <div id="legend-values"></div>
-            <p class="legend-note">Anúncios/km² · do menor ao maior valor da cidade atual.<br>Área aproximada a partir dos polígonos GeoJSON.</p>
-          </div>
-          <p id="parish-name">Passe o rato sobre uma freguesia para ver o nome. Clique para selecionar.</p>
-          <p class="map-help">Use a roda do rato ou os botões + e − para ampliar. Arraste para deslocar o mapa.</p>
         </section>
-        <section class="results-panel" aria-labelledby="results-title">
-          <h2 id="results-title">Anúncios encontrados</h2>
-          <p id="result-count" role="status"></p>
-          <div class="listing-scroll" id="listing-scroll" role="region" aria-label="Lista de anúncios" tabindex="0">
-            <ul id="listing-list"></ul>
+        <section class="map-section" id="map-section" aria-label="Mapa e anúncios">
+          <section class="map-panel" aria-labelledby="map-title">
+            <div class="map-heading">
+              <h2 id="map-title">Freguesias</h2>
+              <button class="secondary" id="reset-view" type="button" disabled>Vista geral da cidade</button>
+            </div>
+            <p class="chart-help">As cores representam a densidade de anúncios por km². Selecione uma freguesia para explorar os seus alojamentos.</p>
+            <p id="map-status" role="status"></p>
+            <button class="secondary" id="retry-load" type="button" hidden>Tentar novamente</button>
+            <div class="map-canvas">
+              <svg id="map" viewBox="0 0 800 600" role="group" aria-label="Mapa de freguesias" hidden></svg>
+              <div class="zoom-controls" role="group" aria-label="Zoom do mapa">
+                <button class="secondary" id="zoom-in" type="button" aria-label="Aproximar mapa" disabled>+</button>
+                <button class="secondary" id="zoom-out" type="button" aria-label="Afastar mapa" disabled>−</button>
+              </div>
+            </div>
+            <div class="density-legend" id="density-legend" hidden>
+              <p id="legend-title">Densidade de anúncios · anúncios/km²</p>
+              <ul id="legend-values" aria-label="Sete intervalos de densidade, comuns a Lisboa e Porto"></ul>
+              <p class="legend-note">Total de anúncios ÷ área aproximada da freguesia. Escala comum a Lisboa e Porto, independente dos filtros.</p>
+            </div>
+            <p id="parish-name">Passe o rato sobre uma freguesia para ver os valores. Clique para selecionar.</p>
+            <p class="map-help">Use a roda do rato ou os botões + e − para ampliar. Arraste para deslocar. Os pontos surgem apenas na freguesia selecionada; clique num ponto para selecionar o alojamento.</p>
+          </section>
+          <section class="results-panel" aria-labelledby="results-title">
+            <h2 id="results-title">Anúncios encontrados</h2>
+            <label class="sort-label">Ordenar por <select id="listing-sort"><option value="price-asc">Preço crescente</option><option value="price-desc">Preço decrescente</option><option value="rating-desc">Melhor avaliação</option></select></label>
+            <p id="result-count" role="status"></p>
+            <div class="listing-scroll" id="listing-scroll" role="region" aria-label="Lista de anúncios" tabindex="0"><ul id="listing-list"></ul></div>
+            <nav class="pagination" aria-label="Páginas de anúncios">
+              <button class="secondary" id="previous-page" type="button" disabled>Anterior</button>
+              <span id="page-label" role="status"></span>
+              <button class="secondary" id="next-page" type="button" disabled>Seguinte</button>
+            </nav>
+          </section>
+        </section>
+        <section id="charts-section" aria-label="Análise dos preços" hidden>
+          <div class="chart-controls">
+            <label><input id="show-extremes" type="checkbox"> Incluir todos os preços na escala dos gráficos</label>
+            <button class="secondary" id="clear-price-range" type="button" disabled>Remover intervalo do histograma</button>
           </div>
-          <nav class="pagination" aria-label="Páginas de anúncios">
-            <button class="secondary" id="previous-page" type="button" disabled>Anterior</button>
-            <span id="page-label" role="status"></span>
-            <button class="secondary" id="next-page" type="button" disabled>Seguinte</button>
-          </nav>
+          <div class="charts">
+            <section class="chart-panel" aria-labelledby="histogram-title">
+              <h2 id="histogram-title">Distribuição dos preços</h2>
+              <p class="chart-help">Cada barra conta os anúncios num intervalo de preços por noite. Arraste para selecionar um intervalo e filtrar as outras vistas; as barras mantêm a distribuição de referência. Clique na área vazia para remover o intervalo.</p>
+              <svg id="histogram" role="img" aria-label="Histograma de preços por noite"></svg>
+              <p id="histogram-median" class="median-label"></p>
+              <p id="histogram-selection" class="selection-price-label" hidden></p>
+              <ul id="comparison-marks" class="chart-legend" aria-label="Preços dos alojamentos em comparação"></ul>
+              <p id="histogram-note" class="chart-note" role="status"></p>
+            </section>
+            <section class="chart-panel" aria-labelledby="scatterplot-title">
+              <h2 id="scatterplot-title">Preço e características do alojamento</h2>
+              <p class="chart-help">Relacione o preço por noite com a capacidade, os quartos ou as avaliações. Cada ponto representa um anúncio; as cores distinguem os tipos de alojamento.</p>
+              <label class="scatter-control">Característica no eixo X <select id="scatter-variable"><option value="accommodates">Capacidade de hóspedes</option><option value="bedrooms">Número de quartos</option><option value="review_scores_rating">Avaliação do alojamento</option><option value="number_of_reviews">Número de avaliações</option></select></label>
+              <p class="chart-help" id="scatter-help">Cada ponto representa um anúncio. Clique para o selecionar no mapa e na lista.</p>
+              <svg id="scatterplot" role="group" aria-label="Relação entre característica do alojamento e preço por noite"></svg>
+              <ul id="room-legend" class="chart-legend" aria-label="Tipos de alojamento"></ul>
+              <p id="scatterplot-note" class="chart-note" role="status"></p>
+            </section>
+          </div>
+        </section>
+        <section id="zones-section" class="chart-panel zones-section" aria-labelledby="zones-title" hidden>
+          <div class="map-heading">
+            <div>
+              <h2 id="zones-title">Comparar Zonas</h2>
+              <p class="zones-question">Qual é o preço típico em cada freguesia?</p>
+            </div>
+            <label>Ordenar por
+              <select id="zones-sort">
+                <option value="median-desc">Preço mediano — maior para menor</option>
+                <option value="median-asc">Preço mediano — menor para maior</option>
+                <option value="name">Nome da freguesia — ordem alfabética</option>
+                <option value="count-desc">Número de anúncios válidos — maior para menor</option>
+              </select>
+            </label>
+          </div>
+          <p id="zones-context" class="chart-help" role="status"></p>
+          <p class="chart-help" id="zones-help">Selecione uma freguesia para a destacar no mapa e atualizar a lista e os gráficos. Use Tab e Enter ou Espaço para selecionar por teclado. n = anúncios com preço válido; «Amostra reduzida» indica menos de 30.</p>
+          <div class="zones-scroll" role="region" aria-label="Preços medianos por freguesia" tabindex="0">
+            <div class="zone-columns" aria-hidden="true">
+              <span class="zone-name-heading">Freguesia</span>
+              <svg id="zones-axis" aria-hidden="true"></svg>
+              <span>Mediana/noite (€)</span>
+              <span>n válidos</span>
+            </div>
+            <ul id="zones-list" aria-describedby="zones-help"></ul>
+          </div>
         </section>
       </section>
-    </section>
-  </main>
 
+      <section id="details-view" aria-labelledby="details-title" hidden>
+        <button class="secondary" id="back-dashboard" type="button">← Voltar ao dashboard</button>
+        <article class="details-panel">
+          <p id="details-context"></p>
+          <h1 id="details-title" tabindex="-1"></h1>
+          <p class="detail-price" id="details-price"></p>
+          <div class="card-actions">
+            <button class="secondary" id="details-locate" type="button">Destacar no mapa</button>
+            <button class="secondary" id="details-compare" type="button">Adicionar à comparação</button>
+          </div>
+          <dl id="details-fields"></dl>
+          <p class="source-note">Informação presente no CSV do Inside Airbnb. Dias disponíveis não medem ocupação efetiva.</p>
+        </article>
+      </section>
+
+      <section id="comparison-view" aria-labelledby="comparison-title" hidden>
+        <button class="secondary" id="comparison-back" type="button">← Voltar ao dashboard</button>
+        <h1 id="comparison-title" tabindex="-1">Comparar alojamentos</h1>
+        <p class="chart-help">Até três anúncios reais. A seleção mantém-se ao mudar os filtros ou a cidade. As cores identificam os preços no histograma da respetiva cidade.</p>
+        <p id="comparison-empty" role="status"></p>
+        <div id="comparison-grid" class="comparison-grid"></div>
+      </section>
+      <details id="data-info" class="data-info">
+        <summary>Sobre os dados e a metodologia</summary>
+        <p>O Airbnb Explorer permite analisar a concorrência no alojamento local: explorar zonas, filtrar anúncios e comparar dois ou três alojamentos.</p>
+        <div class="data-columns">
+          <section aria-labelledby="data-source-title">
+            <h2 id="data-source-title">Fonte e cobertura</h2>
+            <p>Fonte: <a href="https://insideairbnb.com/get-the-data/">Inside Airbnb — Get the Data</a>. A aplicação analisa apenas os concelhos de Lisboa e Porto, embora os ficheiros de origem incluam outros municípios.</p>
+            <ul class="dataset-list">
+              <li>Lisboa: <a href="../dados/Lisboa/listings-lis.csv">listings-lis.csv</a>, <a href="../dados/Lisboa/neighbourhoods-lis.geojson">neighbourhoods-lis.geojson</a> e <a href="../dados/Lisboa/atributos-lis.csv">atributos-lis.csv</a>.</li>
+              <li>Porto: <a href="../dados/Porto/listings-por.csv">listings-por.csv</a>, <a href="../dados/Porto/neighbourhoods-por.geojson">neighbourhoods-por.geojson</a> e <a href="../dados/Porto/atributos-por.csv">atributos-por.csv</a>.</li>
+            </ul>
+            <p>Os atributos complementares são associados pelo identificador do anúncio: capacidade, quartos e avaliação (0–5). Os anúncios fornecem nome, freguesia, coordenadas, tipo, preço, estadia mínima, avaliações, disponibilidade, anfitrião e licença. Os GeoJSON fornecem os limites das freguesias.</p>
+            <p>Os ficheiros de avaliações individuais, calendários e listas de freguesias em CSV não são carregados. Os CSV usados não incluem a data de recolha. Nos arquivos detalhados locais correspondentes (<code>listings-*.csv.gz</code>), o campo <code>last_scraped</code> dos anúncios destes concelhos vai de 20 a 22 de setembro de 2026 em Lisboa e de 19 a 20 de setembro de 2026 no Porto. Esses arquivos não são carregados pela aplicação; a última avaliação não é a data de recolha.</p>
+          </section>
+          <section aria-labelledby="data-method-title">
+            <h2 id="data-method-title">Como ler os resultados</h2>
+            <p><strong>Densidade:</strong> total de anúncios da freguesia dividido pela área aproximada do seu polígono em km². A área é calculada na esfera a partir do GeoJSON (D3, raio terrestre de 6371,0088 km). A associação usa o nome da freguesia. Os sete intervalos são comuns às duas cidades, com limites em 25, 50, 100, 250, 500 e 1000 anúncios/km². Os filtros não alteram a densidade.</p>
+            <p><strong>Valores em falta:</strong> preços e características numéricas vazios, inválidos ou negativos ficam indisponíveis; avaliações acima de 5 também. Não são substituídos por zero. Cada filtro ou gráfico exclui anúncios sem o atributo necessário; as estatísticas do preço usam apenas preços válidos. Coordenadas inválidas não originam pontos no mapa.</p>
+            <p><strong>Extremos:</strong> a escala inicial do preço usa o percentil 95, com arredondamento do limite. No scatterplot, o eixo X usa o percentil 99, exceto a avaliação (0–5). Os anúncios fora da escala continuam na lista e, na freguesia selecionada, no mapa. A opção «Incluir todos os preços na escala dos gráficos» expande ambos os eixos; os filtros continuam a aplicar-se.</p>
+          </section>
+        </div>
+        <section class="data-limitations" aria-labelledby="data-limitations-title">
+          <h2 id="data-limitations-title">Limitações da análise</h2>
+          <ul>
+            <li>Os preços são valores anunciados por noite, apresentados em euros e já arredondados no CSV de resumo; podem variar ao longo do tempo e não representam preços de transações confirmadas.</li>
+            <li>O número de avaliações não representa diretamente reservas ou ocupação. A disponibilidade também não mede necessariamente ocupação.</li>
+            <li>As localizações dos anúncios podem ser aproximadas, afetando a leitura dos pontos e a delimitação por freguesia.</li>
+          </ul>
+          <p>Consulte os <a href="https://insideairbnb.com/data-assumptions/">pressupostos e limitações do Inside Airbnb</a>. A aplicação apoia a exploração dos dados e não recomenda investimentos.</p>
+        </section>
+      </details>
+    </div>
+  </main>
+  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="app.js"></script>
 </body>

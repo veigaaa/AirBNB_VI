@@ -5,7 +5,10 @@ const cities = {
 const currency = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
 const densityFormat = new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 1 });
 const ratingFormat = new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 2 });
-const densityColors = ['#35A853', '#F5D547', '#F28C28', '#D93432'];
+const densityColors = ['#27964b', '#80bf59', '#c4d96a', '#f5d547', '#f5a23a', '#e96a32', '#cf3435'];
+// As 31 freguesias vão de 9,5 a 1439,4 anúncios/km²; 24 ficam abaixo de 300.
+// Os mesmos limiares distinguem melhor os valores baixos nas duas cidades.
+const densityThresholds = [25, 50, 100, 250, 500, 1000];
 const parishNames = {
   'Belm': 'Belém',
   'Alcntara': 'Alcântara',
@@ -68,6 +71,7 @@ let mapHeight = 0;
 let activeFilters = readFilters();
 let comparedListings = [];
 let chartMaximum = 1;
+let histogram = null;
 
 function displayParish(name) {
   const key = (name || '').normalize('NFC').trim();
@@ -193,26 +197,24 @@ function prepareDensity(geoData) {
     const count = counts.get(nameKey(feature.properties.neighbourhood)) || 0;
     feature.metrics = { areaKm2: areaKm2, count: count, density: count / areaKm2 };
   });
-  const maximum = Math.max(100, Math.ceil(d3.max(geoData.features, d => d.metrics.density) / 100) * 100);
-  densityScale = d3.scaleQuantize().domain([0, maximum]).range(densityColors);
+  densityScale = d3.scaleThreshold().domain(densityThresholds).range(densityColors);
   renderDensityLegend();
 }
 
 function renderDensityLegend() {
-  const levels = ['Baixa', 'Moderada', 'Elevada', 'Muito elevada'];
-  document.getElementById('legend-title').textContent = 'Densidade · ' + selectedCity + ' · anúncios/km²';
+  document.getElementById('legend-title').textContent = 'Densidade de alojamentos · anúncios/km²';
   const labels = document.getElementById('legend-values');
   labels.replaceChildren();
-  densityColors.forEach(function (color, i) {
-    const interval = densityScale.invertExtent(color);
+  densityColors.forEach(function (color) {
+    const [lower, upper] = densityScale.invertExtent(color);
     const item = document.createElement('li');
     const swatch = document.createElement('span');
     swatch.className = 'legend-swatch';
     swatch.style.backgroundColor = color;
     swatch.setAttribute('aria-hidden', 'true');
     const label = document.createElement('span');
-    label.textContent = densityFormat.format(interval[0]) + ' a ' + (i < 3 ? '< ' : '') +
-      densityFormat.format(interval[1]) + ' · ' + levels[i];
+    label.textContent = upper === undefined ? densityFormat.format(lower) + ' ou mais' :
+      densityFormat.format(lower ?? 0) + ' a menos de ' + densityFormat.format(upper);
     item.append(swatch, label);
     labels.appendChild(item);
   });
@@ -234,6 +236,7 @@ function highlightParish() {
     .classed('selected', d => sameName(d.properties.neighbourhood, selectedParish))
     .classed('muted', d => selectedParish !== null && !sameName(d.properties.neighbourhood, selectedParish))
     .attr('aria-pressed', d => String(sameName(d.properties.neighbourhood, selectedParish)));
+  d3.select('#map').selectAll('.parish.selected').raise();
 }
 
 function baseListings() {
@@ -250,18 +253,27 @@ function baseListings() {
 }
 
 // O mesmo conjunto filtrado alimenta a lista, o mapa e os dois gráficos.
-function updateSelection() {
+function updateSelection(keepHistogram = false) {
   hideTooltip();
-  const base = baseListings();
+  document.getElementById('selection-status').textContent = '';
+  const base = keepHistogram && histogram ? histogram.base : baseListings();
   filteredListings = base.filter(d => priceRange === null ||
     (Number.isFinite(d.price) && d.price >= priceRange[0] && d.price <= priceRange[1]));
-  if (selectedListing && !filteredListings.some(d => d.id === selectedListing.id)) selectedListing = null;
+  if (selectedListing && !filteredListings.some(d => d.id === selectedListing.id)) {
+    selectedListing = null;
+    document.getElementById('selection-status').textContent = 'O alojamento selecionado deixou de cumprir os filtros. A seleção foi removida.';
+  }
   sortListings();
-  currentPage = 0;
+  currentPage = selectedListing ? Math.floor(filteredListings.findIndex(d => d.id === selectedListing.id) / pageSize) : 0;
   highlightParish();
   renderListings();
   drawListingPoints();
-  renderCharts(base);
+  if (keepHistogram && histogram) {
+    updateHistogramSelection();
+    renderScatterplot(chartMaximum);
+  } else {
+    renderCharts(base);
+  }
   parishInput.value = selectedParish || '';
   renderActiveFilters();
   renderIndicators();
@@ -379,22 +391,43 @@ function renderSelectedSummary() {
 }
 
 function focusListing(listing) {
-  const feature = currentGeoData.features.find(d => sameName(d.properties.neighbourhood, listing.neighbourhood));
-  if (!feature) return;
-  selectedListing = listing;
-  selectedParish = feature.properties.neighbourhood;
-  updateSelection();
-  const index = filteredListings.findIndex(d => d.id === listing.id);
-  currentPage = Math.max(0, Math.floor(index / pageSize));
-  renderListings();
+  selectListing(listing);
   showView('dashboard');
-  zoomToParish(feature);
   document.getElementById('map-section').scrollIntoView({ block: 'start' });
+}
+
+function selectListing(listing) {
+  const feature = currentGeoData.features.find(d => sameName(d.properties.neighbourhood, listing.neighbourhood));
+  if (!feature || !filteredListings.some(d => d.id === listing.id)) return;
+  const parishChanged = !sameName(selectedParish, feature.properties.neighbourhood);
+  selectedListing = listing;
+  document.getElementById('selection-status').textContent = '';
+  if (parishChanged) {
+    selectedParish = feature.properties.neighbourhood;
+    updateSelection();
+    zoomToParish(feature);
+  } else {
+    currentPage = Math.floor(filteredListings.findIndex(d => d.id === listing.id) / pageSize);
+    renderListings();
+    highlightListing();
+    renderSelectedSummary();
+    renderHistogramMarks();
+  }
+  const card = listingList.querySelector('.selected');
+  if (card) listingScroll.scrollTop = Math.max(0, card.offsetTop - listingList.offsetTop);
+}
+
+function clearListing() {
+  selectedListing = null;
+  document.getElementById('selection-status').textContent = 'Seleção do alojamento removida.';
+  renderListings();
+  highlightListing();
+  renderSelectedSummary();
+  renderHistogramMarks();
 }
 
 function selectParish(feature) {
   selectedParish = feature.properties.neighbourhood;
-  selectedListing = null;
   updateSelection();
   zoomToParish(feature);
 }
@@ -464,7 +497,7 @@ function drawListingPoints() {
     .attr('cy', d => d.mapPoint[1])
     .on('mousemove', function (event, d) { showTooltip(event, listingTooltip(d)); })
     .on('mouseleave', hideTooltip)
-    .on('click', function (event, d) { event.stopPropagation(); openListing(d); });
+    .on('click', function (event, d) { event.stopPropagation(); selectListing(d); });
   highlightListing();
 }
 
@@ -477,7 +510,8 @@ function highlightListing() {
     .style('--comparison-color', d => comparisonEntry(d)?.color || null);
   d3.select('#scatterplot').selectAll('.scatter-point')
     .classed('selected', d => selectedListing !== null && d.id === selectedListing.id)
-    .attr('r', d => selectedListing !== null && d.id === selectedListing.id ? 5 : 2.7);
+    .attr('r', scatterRadius);
+  d3.select('#scatterplot').selectAll('.scatter-point.compared').raise();
   d3.select('#scatterplot').selectAll('.scatter-point.selected').raise();
   resizePoints(d3.zoomTransform(mapElement).k);
 }
@@ -486,17 +520,13 @@ function resetView() {
   if (!currentGeoData) return;
   selectedParish = null;
   selectedListing = null;
+  document.getElementById('selection-status').textContent = '';
   updateSelection();
   d3.select('#map').call(mapZoom.transform, d3.zoomIdentity);
 }
 
 function openListing(listing) {
-  if (selectedParish === null) focusListing(listing);
-  selectedListing = listing;
-  const index = filteredListings.findIndex(d => d.id === listing.id);
-  currentPage = Math.max(0, Math.floor(index / pageSize));
-  renderListings();
-  highlightListing();
+  selectListing(listing);
   document.getElementById('details-title').textContent = listing.name || 'Anúncio sem nome';
   document.getElementById('details-price').textContent = listingPrice(listing);
   document.getElementById('details-context').textContent = selectedCity + ' · ' + displayParish(listing.neighbourhood);
@@ -532,11 +562,14 @@ function openListing(listing) {
   showView('details');
 }
 
-function listingTooltip(d) {
-  return (d.name || 'Anúncio sem nome') + '\n' + listingPrice(d) + '\n' +
-    (roomTypes[d.room_type] || d.room_type) + ' · ' + displayParish(d.neighbourhood) + '\n' +
+function listingTooltip(d, field) {
+  const description = (d.name || 'Anúncio sem nome') + '\n' + listingPrice(d) + '\n' +
+    (roomTypes[d.room_type] || d.room_type) + ' · ' + displayParish(d.neighbourhood) + '\n';
+  if (field) return description + scatterVariables[field] + ': ' +
+    (field === 'review_scores_rating' ? ratingText(d) : (d[field] ?? 'Indisponível')) + '\nClique para selecionar.';
+  return description +
     'Capacidade: ' + (d.accommodates ?? 'Indisponível') + ' · Quartos: ' + (d.bedrooms ?? 'Indisponível') + '\n' +
-    'Avaliação: ' + ratingText(d) + ' · ' + (d.number_of_reviews ?? 'Indisponível') + ' avaliações\nClique para detalhes e comparação.';
+    'Avaliação: ' + ratingText(d) + ' · ' + (d.number_of_reviews ?? 'Indisponível') + ' avaliações\nClique para selecionar.';
 }
 
 function comparisonEntry(listing) {
@@ -547,7 +580,8 @@ function updateComparisonButtons() {
   const count = comparedListings.length;
   const open = document.getElementById('compare-open');
   open.textContent = 'Comparar (' + count + ')';
-  open.disabled = count === 0;
+  open.disabled = count < 2;
+  open.title = count < 2 ? 'Selecione pelo menos dois alojamentos para comparar.' : 'Comparar os alojamentos selecionados';
   document.querySelectorAll('.compare-toggle').forEach(function (button) {
     const entry = comparedListings.find(d => d.listing.id === button.dataset.id && d.listing.city === button.dataset.city);
     button.textContent = entry ? 'Remover da comparação' : 'Adicionar à comparação';
@@ -576,11 +610,14 @@ function toggleComparison(listing) {
     comparedListings.push({ listing: listing, color: color });
   }
   document.getElementById('comparison-status').textContent = comparedListings.length +
-    ' de 3 alojamentos selecionados para comparação.';
+    ' de 3 alojamentos selecionados para comparação.' + (comparedListings.length === 1 ? ' Selecione mais um para comparar.' : '');
   updateComparisonButtons();
   highlightListing();
-  if (currentGeoData) renderHistogram(chartMaximum);
-  if (currentView === 'comparison') renderComparison();
+  renderHistogramMarks();
+  if (currentView === 'comparison') {
+    renderComparison();
+    if (comparedListings.length < 2) showView('dashboard');
+  }
 }
 
 function renderComparison() {
@@ -588,6 +625,8 @@ function renderComparison() {
   grid.replaceChildren();
   document.getElementById('comparison-empty').textContent = comparedListings.length < 2 ?
     'Regresse ao dashboard e selecione pelo menos dois alojamentos para comparar.' : '';
+  if (comparedListings.length < 2) return;
+  const lowestPrice = d3.min(comparedListings.filter(d => Number.isFinite(d.listing.price)), d => d.listing.price);
   comparedListings.forEach(function (entry) {
     const d = entry.listing;
     const card = document.createElement('article');
@@ -602,11 +641,21 @@ function renderComparison() {
       ['Capacidade de hóspedes', d.accommodates], ['Número de quartos', d.bedrooms],
       ['Avaliação', ratingText(d)], ['Número de avaliações', d.number_of_reviews]
     ].forEach(function (field) {
+      const row = document.createElement('div');
+      row.className = 'comparison-field';
       const label = document.createElement('dt');
       const value = document.createElement('dd');
       label.textContent = field[0];
       value.textContent = field[1] == null || field[1] === '' ? 'Indisponível' : field[1];
-      fields.append(label, value);
+      if (field[0] === 'Preço por noite' && Number.isFinite(d.price) && d.price === lowestPrice) {
+        value.className = 'lowest-price';
+        const badge = document.createElement('span');
+        badge.className = 'lowest-price-label';
+        badge.textContent = 'Menor preço disponível';
+        value.appendChild(badge);
+      }
+      row.append(label, value);
+      fields.appendChild(row);
     });
     const remove = document.createElement('button');
     remove.type = 'button';
@@ -642,6 +691,7 @@ async function loadCity(city) {
   mapZoom = null;
   mapWidth = 0;
   mapHeight = 0;
+  histogram = null;
   currentPage = 0;
   document.querySelectorAll('#filters input, #filters select').forEach(function (input) { input.value = ''; });
   priceInput.setCustomValidity('');
@@ -656,6 +706,7 @@ async function loadCity(city) {
     document.getElementById(id).textContent = '—';
   });
   document.getElementById('filter-summary').textContent = '';
+  document.getElementById('selection-status').textContent = '';
   document.getElementById('density-legend').hidden = true;
   document.getElementById('charts-section').hidden = true;
   mapElement.setAttribute('hidden', '');
@@ -670,13 +721,13 @@ async function loadCity(city) {
   try {
     if (typeof d3 === 'undefined') throw new Error('Não foi possível carregar D3.js. Verifique a ligação à Internet.');
     const config = cities[city];
-    const base = '../dados/' + config.folder + '/';
+    const base = '../../dados/' + config.folder + '/';
     // Guarda a promessa para reutilizar também carregamentos ainda em curso.
     if (!cityCache[city]) {
       cityCache[city] = Promise.all([
         d3.json(base + 'neighbourhoods-' + config.suffix + '.geojson'),
         d3.csv(base + 'listings-' + config.suffix + '.csv', prepareListing),
-        d3.csv('atributos-' + config.suffix + '.csv')
+        d3.csv(base + 'atributos-' + config.suffix + '.csv')
       ]).catch(function (error) { delete cityCache[city]; throw error; });
     }
     const [geoData, rows, attributes] = await cityCache[city];
@@ -768,12 +819,13 @@ function renderCharts(base) {
   // O percentil 95 evita que poucos preços extremos comprimam a distribuição.
   const limit = prices.length ? (showAll ? d3.max(prices) : d3.quantileSorted(prices, 0.95)) : 1;
   chartMaximum = d3.scaleLinear().domain([0, Math.max(1, limit)]).nice().domain()[1];
-  renderHistogram(chartMaximum);
+  renderHistogram(chartMaximum, base);
   renderScatterplot(chartMaximum);
 }
 
-function renderHistogram(maximum) {
-  const valid = filteredListings.filter(d => Number.isFinite(d.price));
+function renderHistogram(maximum, base) {
+  // As barras usam os filtros anteriores ao brush, preservando a referência.
+  const valid = base.filter(d => Number.isFinite(d.price));
   const visible = valid.filter(d => d.price <= maximum);
   const x = d3.scaleLinear().domain([0, maximum]);
   const thresholds = x.ticks(18).filter(value => value > 0 && value < maximum);
@@ -785,33 +837,26 @@ function renderHistogram(maximum) {
     .attr('x', d => x(d.x0) + 1).attr('y', d => y(d.length))
     .attr('width', d => Math.max(0, x(d.x1) - x(d.x0) - 1))
     .attr('height', d => y(0) - y(d.length));
-  const median = d3.median(valid, d => d.price);
-  frame.svg.selectAll('.median-line').data(Number.isFinite(median) && median <= maximum ? [median] : []).join('line')
-    .attr('class', 'median-line').attr('x1', d => x(d)).attr('x2', d => x(d))
-    .attr('y1', frame.margin.top).attr('y2', y(0));
-  document.getElementById('histogram-median').textContent = Number.isFinite(median) ?
-    'Mediana dos preços filtrados: ' + currency.format(median) + (median > maximum ? ' (fora da escala).' : ' · linha tracejada.') :
-    'Mediana indisponível: não existem preços para estes filtros.';
-  renderComparisonMarks(frame, x, maximum);
   emptyChart(frame, visible.length === 0);
-  const missing = filteredListings.length - valid.length;
+  const missing = base.length - valid.length;
   const outside = valid.length - visible.length;
   document.getElementById('histogram-note').textContent =
-    visible.length.toLocaleString('pt-PT') + ' anúncios no gráfico · ' + missing.toLocaleString('pt-PT') +
+    'Referência antes do intervalo: ' + visible.length.toLocaleString('pt-PT') + ' anúncios representados · ' + missing.toLocaleString('pt-PT') +
     ' sem preço · ' + outside.toLocaleString('pt-PT') + ' acima de ' + currency.format(maximum) +
     '. Os valores fora da escala continuam na lista e no mapa. ' +
     (document.getElementById('show-extremes').checked ? 'Escala com todos os preços.' : 'Limite visual baseado no percentil 95.') +
-    ' A escala é calculada antes do intervalo selecionado.';
+    ' As percentagens referem-se aos anúncios representados nas barras.';
   const brush = d3.brushX()
     .extent([[frame.margin.left, frame.margin.top], [frame.width - frame.margin.right, frame.height - frame.margin.bottom]])
     .on('end', function (event) {
       if (!event.sourceEvent) return;
       priceRange = event.selection && event.selection[1] - event.selection[0] >= 2 ? event.selection.map(x.invert) : null;
-      updateSelection();
+      updateSelection(true);
     });
   const brushLayer = frame.svg.selectAll('.brush').data([null]).join('g').attr('class', 'brush').call(brush);
   brushLayer.raise();
-  brushLayer.call(brush.move, priceRange ? priceRange.map(value => x(Math.max(0, Math.min(maximum, value)))) : null);
+  histogram = { frame: frame, x: x, maximum: maximum, brush: brush, base: base };
+  updateHistogramSelection();
   frame.svg.on('mousemove', function (event) {
     const position = d3.pointer(event, this);
     if (position[0] < frame.margin.left || position[0] > frame.width - frame.margin.right ||
@@ -819,8 +864,48 @@ function renderHistogram(maximum) {
     const value = x.invert(position[0]);
     const bin = bins.find(d => value >= d.x0 && (value < d.x1 || (value === d.x1 && d.x1 === maximum)));
     if (bin) showTooltip(event, currency.format(bin.x0) + ' a ' + currency.format(bin.x1) +
-      (bin.x1 === maximum ? ' (inclusive)' : ' (limite superior exclusivo)') + '\n' + bin.length.toLocaleString('pt-PT') + ' anúncios');
+      (bin.x1 === maximum ? ' (inclusive)' : ' (limite superior exclusivo)') + '\n' + bin.length.toLocaleString('pt-PT') + ' anúncios\n' +
+      densityFormat.format(visible.length ? 100 * bin.length / visible.length : 0) + '% dos anúncios representados');
   }).on('mouseleave', hideTooltip);
+}
+
+function updateHistogramSelection() {
+  if (!histogram) return;
+  const { frame, x, maximum, brush } = histogram;
+  frame.svg.selectAll('.histogram-bar').classed('outside-range', d => priceRange !== null &&
+    !(d.x1 > priceRange[0] && d.x0 <= priceRange[1]) && !(d.x1 === maximum && d.x1 === priceRange[0]));
+  const median = d3.median(filteredListings.filter(d => Number.isFinite(d.price)), d => d.price);
+  const medianVisible = Number.isFinite(median) && median <= maximum;
+  frame.svg.selectAll('.median-line').data(medianVisible ? [median] : []).join('line')
+    .attr('class', 'median-line').attr('x1', d => x(d)).attr('x2', d => x(d))
+    .attr('y1', frame.margin.top).attr('y2', frame.height - frame.margin.bottom);
+  frame.svg.selectAll('.median-annotation').data(medianVisible ? [median] : []).join('text')
+    .attr('class', 'median-annotation').attr('x', d => x(d)).attr('y', 14)
+    .attr('text-anchor', medianVisible && x(median) > frame.width / 2 ? 'end' : 'start')
+    .text(d => 'Mediana: ' + currency.format(d));
+  document.getElementById('histogram-median').textContent = Number.isFinite(median) ?
+    'Mediana dos anúncios filtrados: ' + currency.format(median) + (median > maximum ? ' (fora da escala).' : ' · linha tracejada.') :
+    'Mediana indisponível: não existem preços para estes filtros.';
+  frame.svg.select('.brush').call(brush.move, priceRange ? priceRange.map(value => x(Math.max(0, Math.min(maximum, value)))) : null);
+  renderHistogramMarks();
+}
+
+function renderHistogramMarks() {
+  if (!histogram) return;
+  const { frame, x, maximum } = histogram;
+  renderComparisonMarks(frame, x, maximum);
+  const listing = selectedListing;
+  const visible = listing !== null && Number.isFinite(listing.price) && listing.price <= maximum;
+  frame.svg.selectAll('.selection-price-mark').data(visible ? [listing] : []).join('line')
+    .attr('class', 'selection-price-mark').style('stroke', d => comparisonEntry(d)?.color || '#b7472d')
+    .attr('x1', d => x(d.price)).attr('x2', d => x(d.price))
+    .attr('y1', frame.margin.top).attr('y2', frame.height - frame.margin.bottom);
+  const label = document.getElementById('histogram-selection');
+  label.hidden = listing === null;
+  label.style.color = listing ? (comparisonEntry(listing)?.color || '#943f2b') : '';
+  label.textContent = listing ? 'Selecionado: ' + (listing.name || 'Anúncio sem nome') + ' · ' + listingPrice(listing) +
+    (listing.price > maximum ? ' (fora da escala)' : '') : '';
+  frame.svg.select('.brush').raise();
 }
 
 function renderComparisonMarks(frame, x, maximum) {
@@ -859,18 +944,28 @@ function renderScatterplot(maximum) {
   const y = d3.scaleLinear().domain([0, maximum]);
   const frame = chartFrame('scatterplot', x, y, scatterVariables[field], 'Preço por noite (€)');
   frame.svg.attr('aria-label', 'Preço por noite e ' + scatterVariables[field]);
+  const discrete = field === 'accommodates' || field === 'bedrooms';
+  const jitter = discrete ? Math.min(6, (x(1) - x(0)) * 0.12) : 0;
   document.getElementById('scatter-help').textContent =
     (field === 'number_of_reviews' ? 'O número de avaliações não representa diretamente reservas ou ocupação. ' : '') +
-    'Clique num ponto para consultar detalhes e adicionar à comparação.';
+    (discrete ? 'Pequenos desvios horizontais separam os pontos; os valores reais aparecem no tooltip. ' : '') +
+    'Clique num ponto para o selecionar no mapa e na lista.';
   frame.svg.selectAll('.scatter-layer').data([null]).join('g').attr('class', 'scatter-layer')
     .selectAll('circle').data(visible, d => d.id).join('circle')
-    .attr('class', 'scatter-point').attr('r', 2.7)
+    .attr('class', 'scatter-point').attr('r', scatterRadius)
     .style('fill', d => roomColors[d.room_type] || '#646b70')
-    .attr('cx', d => x(d[field])).attr('cy', d => y(d.price))
+    .attr('cx', function (d) {
+      const position = x(d[field]);
+      return discrete ? Math.max(frame.margin.left + 2, Math.min(frame.width - frame.margin.right - 2,
+        position + scatterJitter(d.id) * jitter)) : position;
+    }).attr('cy', d => y(d.price))
+    .on('mouseenter', function () { d3.select(this).classed('hovered', true).attr('r', 5).raise(); })
     .on('mousemove', function (event, d) {
-      showTooltip(event, listingTooltip(d));
-    }).on('mouseleave', hideTooltip)
-    .on('click', function (event, d) { openListing(d); });
+      showTooltip(event, listingTooltip(d, field));
+    }).on('mouseleave', function () {
+      d3.select(this).classed('hovered', false).attr('r', scatterRadius);
+      hideTooltip();
+    }).on('click', function (event, d) { selectListing(d); });
   emptyChart(frame, visible.length === 0);
   document.getElementById('scatterplot-note').textContent = visible.length.toLocaleString('pt-PT') +
     ' anúncios no gráfico · ' + (filteredListings.length - valid.length).toLocaleString('pt-PT') +
@@ -878,20 +973,24 @@ function renderScatterplot(maximum) {
     ' fora da escala. Preço até ' + currency.format(maximum) + '; eixo X até ' + densityFormat.format(xMaximum) +
     (showAll ? '.' : ' (limites baseados nos percentis 95 do preço e 99 da característica; avaliação de 0 a 5).') +
     ' Os anúncios fora da escala mantêm-se na lista.';
-  const legend = document.getElementById('room-legend');
-  legend.replaceChildren();
-  Object.keys(roomTypes).filter(type => listings.some(d => d.room_type === type)).forEach(function (type) {
-    const item = document.createElement('li');
-    const swatch = document.createElement('span');
-    swatch.className = 'legend-swatch';
-    swatch.style.backgroundColor = roomColors[type];
-    swatch.setAttribute('aria-hidden', 'true');
-    const label = document.createElement('span');
-    label.textContent = roomTypes[type];
-    item.append(swatch, label);
-    legend.appendChild(item);
-  });
+  const types = Object.keys(roomTypes).filter(type => listings.some(d => d.room_type === type));
+  const legend = d3.select('#room-legend').selectAll('li').data(types).join('li');
+  legend.selectAll('.legend-swatch').data(type => [type]).join('span').attr('class', 'legend-swatch')
+    .style('background-color', type => roomColors[type]).attr('aria-hidden', 'true');
+  legend.selectAll('.legend-label').data(type => [type]).join('span').attr('class', 'legend-label')
+    .text(type => roomTypes[type]);
   highlightListing();
+}
+
+function scatterRadius(d) {
+  return selectedListing && d.id === selectedListing.id ? 5 : (comparisonEntry(d) ? 3 : 2);
+}
+
+function scatterJitter(id) {
+  // O id mantém o desvio visual estável, sem modificar os dados do anúncio.
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return ((hash % 1001) / 1000 - 0.5) * 2;
 }
 
 document.querySelectorAll('.city').forEach(function (button) {
@@ -906,7 +1005,6 @@ roomInput.addEventListener('change', changeFilters);
 bedroomInput.addEventListener('change', changeFilters);
 parishInput.addEventListener('change', function () {
   selectedParish = parishInput.value || null;
-  selectedListing = null;
   updateSelection();
   if (selectedParish) zoomToParish(selectedFeature());
   else d3.select('#map').call(mapZoom.transform, d3.zoomIdentity);
@@ -914,15 +1012,20 @@ parishInput.addEventListener('change', function () {
 document.getElementById('clear-filters').addEventListener('click', clearFilters);
 document.getElementById('listing-sort').addEventListener('change', function () {
   sortListings();
-  currentPage = 0;
+  currentPage = selectedListing ? Math.floor(filteredListings.findIndex(d => d.id === selectedListing.id) / pageSize) : 0;
   renderListings();
 });
 document.getElementById('scatter-variable').addEventListener('change', function () { hideTooltip(); renderScatterplot(chartMaximum); });
 document.getElementById('show-extremes').addEventListener('change', function () { renderCharts(baseListings()); });
-document.getElementById('clear-price-range').addEventListener('click', function () { priceRange = null; updateSelection(); });
-document.getElementById('compare-open').addEventListener('click', function () { renderComparison(); showView('comparison'); });
+document.getElementById('clear-price-range').addEventListener('click', function () { priceRange = null; updateSelection(true); });
+document.getElementById('compare-open').addEventListener('click', function () {
+  if (comparedListings.length < 2) return;
+  renderComparison();
+  showView('comparison');
+});
 document.getElementById('comparison-back').addEventListener('click', function () { showView('dashboard'); });
 document.getElementById('selected-details').addEventListener('click', function () { if (selectedListing) openListing(selectedListing); });
+document.getElementById('clear-listing').addEventListener('click', clearListing);
 document.getElementById('details-locate').addEventListener('click', function () { if (selectedListing) focusListing(selectedListing); });
 ['selected-compare', 'details-compare'].forEach(function (id) {
   document.getElementById(id).addEventListener('click', function () { if (selectedListing) toggleComparison(selectedListing); });
@@ -945,5 +1048,6 @@ new ResizeObserver(function () {
   if (!currentGeoData || currentView !== 'dashboard') return;
   const canvas = document.querySelector('.map-canvas');
   if (canvas.clientWidth !== mapWidth || canvas.clientHeight !== mapHeight) drawMap(currentGeoData);
-  renderCharts(baseListings());
+  const width = Math.max(260, document.getElementById('histogram').clientWidth);
+  if (!histogram || histogram.frame.width !== width) renderCharts(baseListings());
 }).observe(document.getElementById('dashboard-view'));

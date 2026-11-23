@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Airbnb Explorer</title>
-  <link rel="stylesheet" href="../Projeto/style.css">
+  <link rel="stylesheet" href="../versao-inicial/style.css">
   <link rel="stylesheet" href="../teste2/style3.css">
   <link rel="stylesheet" href="../teste3/style4.css">
   <link rel="stylesheet" href="style5.css">
@@ -158,8 +158,8 @@
             <h2 id="data-source-title">Fonte e cobertura</h2>
             <p>Fonte: <a href="https://insideairbnb.com/get-the-data/">Inside Airbnb — Get the Data</a>. A aplicação analisa apenas os concelhos de Lisboa e Porto, embora os ficheiros de origem incluam outros municípios.</p>
             <ul class="dataset-list">
-              <li>Lisboa: <a href="../dados/Lisboa/listings-lis.csv">listings-lis.csv</a>, <a href="../dados/Lisboa/neighbourhoods-lis.geojson">neighbourhoods-lis.geojson</a> e <a href="../teste2/atributos-lis.csv">atributos-lis.csv</a>.</li>
-              <li>Porto: <a href="../dados/Porto/listings-por.csv">listings-por.csv</a>, <a href="../dados/Porto/neighbourhoods-por.geojson">neighbourhoods-por.geojson</a> e <a href="../teste2/atributos-por.csv">atributos-por.csv</a>.</li>
+              <li>Lisboa: <a href="../../dados/Lisboa/listings-lis.csv">listings-lis.csv</a>, <a href="../../dados/Lisboa/neighbourhoods-lis.geojson">neighbourhoods-lis.geojson</a> e <a href="../../dados/Lisboa/atributos-lis.csv">atributos-lis.csv</a>.</li>
+              <li>Porto: <a href="../../dados/Porto/listings-por.csv">listings-por.csv</a>, <a href="../../dados/Porto/neighbourhoods-por.geojson">neighbourhoods-por.geojson</a> e <a href="../../dados/Porto/atributos-por.csv">atributos-por.csv</a>.</li>
             </ul>
             <p>Os atributos complementares são associados pelo identificador do anúncio: capacidade, quartos e avaliação (0–5). Os anúncios fornecem nome, freguesia, coordenadas, tipo, preço, estadia mínima, avaliações, disponibilidade, anfitrião e licença. Os GeoJSON fornecem os limites das freguesias.</p>
             <p>Os ficheiros de avaliações individuais, calendários e listas de freguesias em CSV não são carregados. Os CSV usados não incluem a data de recolha. Nos arquivos detalhados locais correspondentes (<code>listings-*.csv.gz</code>), o campo <code>last_scraped</code> dos anúncios destes concelhos vai de 20 a 22 de setembro de 2026 em Lisboa e de 19 a 20 de setembro de 2026 no Porto. Esses arquivos não são carregados pela aplicação; a última avaliação não é a data de recolha.</p>

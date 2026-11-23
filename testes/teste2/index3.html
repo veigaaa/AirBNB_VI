@@ -3,15 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Airbnb Explorer · Versão 2</title>
-  <link rel="stylesheet" href="../Projeto/style.css">
-  <link rel="stylesheet" href="style2.css">
+  <title>Airbnb Explorer · Versão 3</title>
+  <link rel="stylesheet" href="../versao-inicial/style.css">
+  <link rel="stylesheet" href="style3.css">
 </head>
 <body>
   <header>
-    <p class="brand">Airbnb Explorer <span class="version">Versão experimental</span></p>
-    <button class="secondary" id="go-home" type="button" hidden>Página inicial</button>
+    <p class="brand">Airbnb Explorer <span class="version">Versão experimental 3</span></p>
+    <nav class="header-actions" aria-label="Navegação">
+      <button class="secondary" id="compare-open" type="button" disabled>Comparar (0)</button>
+      <button class="secondary" id="go-home" type="button" hidden>Página inicial</button>
+    </nav>
   </header>
+  <p id="comparison-status" class="comparison-status" role="status"></p>
   <main>
     <div class="intro">
       <section id="home-view" aria-labelledby="intro-title">
@@ -31,12 +35,31 @@
           <label>Cidade <select id="city-select"><option>Lisboa</option><option>Porto</option></select></label>
         </div>
         <form id="filters" class="filters" aria-label="Filtros de anúncios">
-          <p>Freguesia <strong id="active-parish">Todas · selecione no mapa</strong></p>
+          <label>Freguesia <select id="parish-filter"><option value="">Todas as freguesias</option></select></label>
           <label>Tipo de alojamento <select id="room-type"><option value="">Todos os tipos</option></select></label>
+          <label>Preço mínimo por noite (€) <input id="min-price" type="number" min="0" step="any" placeholder="Sem limite" inputmode="decimal"></label>
           <label>Preço máximo por noite (€) <input id="max-price" type="number" min="0" step="any" placeholder="Sem limite" inputmode="decimal"></label>
-          <button class="secondary" id="clear-filters" type="button">Limpar filtros</button>
+          <label>Número de quartos <select id="bedrooms-filter"><option value="">Qualquer número</option></select></label>
+          <label>Capacidade mínima (hóspedes) <input id="guests-filter" type="number" min="1" step="1" placeholder="Qualquer"></label>
+          <label>Avaliação mínima (0–5) <input id="rating-filter" type="number" min="0" max="5" step="0.1" placeholder="Qualquer"></label>
+          <label>Estadia mínima do anúncio (≥ noites) <input id="nights-filter" type="number" min="1" step="1" placeholder="Qualquer"></label>
+          <button class="secondary" id="clear-filters" type="button">Limpar todos os filtros</button>
         </form>
+        <p id="filter-error" role="alert" hidden></p>
+        <ul id="active-filters" aria-label="Filtros ativos"></ul>
         <p id="filter-summary" role="status"></p>
+        <dl class="indicators" aria-label="Indicadores dos anúncios filtrados">
+          <div><dt>Anúncios encontrados</dt><dd id="indicator-count">—</dd></div>
+          <div><dt>Preço mediano por noite</dt><dd id="indicator-median">—</dd></div>
+          <div><dt>Preço médio por noite</dt><dd id="indicator-mean">—</dd></div>
+        </dl>
+        <section id="selected-summary" class="selected-summary" aria-label="Alojamento selecionado" hidden>
+          <p id="selected-name"></p>
+          <div class="card-actions">
+            <button class="secondary" id="selected-details" type="button">Consultar detalhes</button>
+            <button class="secondary" id="selected-compare" type="button">Adicionar à comparação</button>
+          </div>
+        </section>
         <section class="map-section" id="map-section" aria-label="Mapa e anúncios">
           <section class="map-panel" aria-labelledby="map-title">
             <div class="map-heading">
@@ -61,6 +84,7 @@
           </section>
           <section class="results-panel" aria-labelledby="results-title">
             <h2 id="results-title">Anúncios encontrados</h2>
+            <label class="sort-label">Ordenar por <select id="listing-sort"><option value="price-asc">Preço crescente</option><option value="price-desc">Preço decrescente</option><option value="rating-desc">Melhor avaliação</option></select></label>
             <p id="result-count" role="status"></p>
             <div class="listing-scroll" id="listing-scroll" role="region" aria-label="Lista de anúncios" tabindex="0"><ul id="listing-list"></ul></div>
             <nav class="pagination" aria-label="Páginas de anúncios">
@@ -80,12 +104,16 @@
               <h2 id="histogram-title">Distribuição dos preços</h2>
               <p class="chart-help">Arraste no gráfico para selecionar um intervalo de preços. Clique na área vazia para o remover.</p>
               <svg id="histogram" role="img" aria-label="Histograma de preços por noite"></svg>
+              <p id="histogram-median" class="median-label"></p>
+              <ul id="comparison-marks" class="chart-legend" aria-label="Preços dos alojamentos em comparação"></ul>
               <p id="histogram-note" class="chart-note" role="status"></p>
             </section>
             <section class="chart-panel" aria-labelledby="scatterplot-title">
-              <h2 id="scatterplot-title">Preço e número de avaliações</h2>
-              <p class="chart-help">As avaliações não representam diretamente reservas ou ocupação. Passe o rato sobre um ponto para o identificar.</p>
-              <svg id="scatterplot" role="img" aria-label="Relação entre número de avaliações e preço por noite"></svg>
+              <h2 id="scatterplot-title">Preço e características do alojamento</h2>
+              <label class="scatter-control">Característica no eixo X <select id="scatter-variable"><option value="accommodates">Capacidade de hóspedes</option><option value="bedrooms">Número de quartos</option><option value="review_scores_rating">Avaliação do alojamento</option><option value="number_of_reviews">Número de avaliações</option></select></label>
+              <p class="chart-help" id="scatter-help">Cada ponto representa um anúncio. Clique para consultar os detalhes ou adicionar à comparação.</p>
+              <svg id="scatterplot" role="group" aria-label="Relação entre característica do alojamento e preço por noite"></svg>
+              <ul id="room-legend" class="chart-legend" aria-label="Tipos de alojamento"></ul>
               <p id="scatterplot-note" class="chart-note" role="status"></p>
             </section>
           </div>
@@ -98,14 +126,26 @@
           <p id="details-context"></p>
           <h1 id="details-title" tabindex="-1"></h1>
           <p class="detail-price" id="details-price"></p>
+          <div class="card-actions">
+            <button class="secondary" id="details-locate" type="button">Destacar no mapa</button>
+            <button class="secondary" id="details-compare" type="button">Adicionar à comparação</button>
+          </div>
           <dl id="details-fields"></dl>
           <p class="source-note">Informação presente no CSV do Inside Airbnb. Dias disponíveis não medem ocupação efetiva.</p>
         </article>
+      </section>
+
+      <section id="comparison-view" aria-labelledby="comparison-title" hidden>
+        <button class="secondary" id="comparison-back" type="button">← Voltar ao dashboard</button>
+        <h1 id="comparison-title" tabindex="-1">Comparar alojamentos</h1>
+        <p class="chart-help">Até três anúncios reais. A seleção mantém-se ao mudar os filtros ou a cidade. As cores identificam os preços no histograma da respetiva cidade.</p>
+        <p id="comparison-empty" role="status"></p>
+        <div id="comparison-grid" class="comparison-grid"></div>
       </section>
     </div>
   </main>
   <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="app2.js"></script>
+  <script src="app3.js"></script>
 </body>
 </html>

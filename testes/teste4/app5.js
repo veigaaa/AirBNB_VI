@@ -721,13 +721,13 @@ async function loadCity(city) {
   try {
     if (typeof d3 === 'undefined') throw new Error('Não foi possível carregar D3.js. Verifique a ligação à Internet.');
     const config = cities[city];
-    const base = '../dados/' + config.folder + '/';
+    const base = '../../dados/' + config.folder + '/';
     // Guarda a promessa para reutilizar também carregamentos ainda em curso.
     if (!cityCache[city]) {
       cityCache[city] = Promise.all([
         d3.json(base + 'neighbourhoods-' + config.suffix + '.geojson'),
         d3.csv(base + 'listings-' + config.suffix + '.csv', prepareListing),
-        d3.csv('../teste2/atributos-' + config.suffix + '.csv')
+        d3.csv(base + 'atributos-' + config.suffix + '.csv')
       ]).catch(function (error) { delete cityCache[city]; throw error; });
     }
     const [geoData, rows, attributes] = await cityCache[city];
@@ -1051,3 +1051,12 @@ new ResizeObserver(function () {
   const width = Math.max(260, document.getElementById('histogram').clientWidth);
   if (!histogram || histogram.frame.width !== width) renderCharts(baseListings());
 }).observe(document.getElementById('dashboard-view'));
+
+// Abre a informação sem perder os filtros nem a seleção atual.
+document.getElementById('about-data').addEventListener('click', function (event) {
+  event.preventDefault();
+  const info = document.getElementById('data-info');
+  info.open = true;
+  info.querySelector('summary').focus();
+  info.scrollIntoView({ block: 'start' });
+});
