@@ -1,0 +1,1 @@
+Melhorias versão final analise com colegas- fixar barra do topo destacar o "comparar", e averiguar a distinação de cores do mapa consoante filtros e usar apenas uma cor e mexer na saturação.

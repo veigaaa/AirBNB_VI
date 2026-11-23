@@ -10,6 +10,9 @@
   <header>
     <p class="brand">Airbnb Explorer</p>
     <nav class="header-actions" aria-label="Navegação">
+      <label id="header-city" class="header-city" hidden>Cidade
+        <select id="city-select"><option>Lisboa</option><option>Porto</option></select>
+      </label>
       <a class="secondary info-link" id="about-data" href="#data-info">Sobre os dados</a>
       <button class="secondary" id="compare-open" type="button" disabled>Comparar (0)</button>
       <button class="secondary" id="go-home" type="button" hidden>Página inicial</button>
@@ -32,7 +35,6 @@
       <section id="dashboard-view" aria-labelledby="dashboard-title" hidden>
         <div class="dashboard-heading">
           <div><h1 id="dashboard-title" tabindex="-1">Explorar a concorrência</h1><p class="description">Selecione uma freguesia para explorar os alojamentos no mapa.</p></div>
-          <label>Cidade <select id="city-select"><option>Lisboa</option><option>Porto</option></select></label>
         </div>
         <form id="filters" class="filters" aria-label="Filtros de anúncios">
           <label>Freguesia <select id="parish-filter"><option value="">Todas as freguesias</option></select></label>
@@ -42,10 +44,13 @@
           <label>Número de quartos <select id="bedrooms-filter"><option value="">Qualquer número</option></select></label>
           <label>Capacidade mínima (hóspedes) <input id="guests-filter" type="number" min="1" step="1" placeholder="Qualquer"></label>
           <label>Avaliação mínima (0–5) <input id="rating-filter" type="number" min="0" max="5" step="0.1" placeholder="Qualquer"></label>
-          <label>Estadia mínima exigida: pelo menos (noites) <input id="nights-filter" type="number" min="1" step="1" placeholder="Qualquer"></label>
+          <label>Estadia mínima exigida (pelo menos)
+            <input id="nights-filter" type="number" min="1" step="1" placeholder="Qualquer">
+          </label>
           <button class="secondary" id="clear-filters" type="button">Limpar todos os filtros</button>
         </form>
         <p id="filter-error" role="alert" hidden></p>
+        <p id="city-change-status" class="context-note" role="status"></p>
         <ul id="active-filters" aria-label="Filtros ativos"></ul>
         <p id="filter-summary" role="status"></p>
         <p id="selection-status" role="status"></p>
@@ -54,6 +59,7 @@
           <div><dt>Preço mediano por noite</dt><dd id="indicator-median">—</dd></div>
           <div><dt>Preço médio por noite</dt><dd id="indicator-mean">—</dd></div>
         </dl>
+        <p class="data-period">Referência temporal: setembro de 2026 nos arquivos detalhados correspondentes. Os CSV de resumo não incluem a data de recolha.</p>
         <section id="selected-summary" class="selected-summary" aria-label="Alojamento selecionado" hidden>
           <p id="selected-name"></p>
           <div class="card-actions">
@@ -66,9 +72,9 @@
           <section class="map-panel" aria-labelledby="map-title">
             <div class="map-heading">
               <h2 id="map-title">Freguesias</h2>
-              <button class="secondary" id="reset-view" type="button" disabled>Vista geral da cidade</button>
+              <button class="secondary" id="reset-view" type="button" title="Regressa à cidade inteira e remove a freguesia e o anúncio selecionados. Mantém os filtros gerais e os alojamentos em comparação." aria-describedby="map-help" disabled>Ver cidade e limpar seleção</button>
             </div>
-            <p class="chart-help">As cores representam a densidade de anúncios por km². Selecione uma freguesia para explorar os seus alojamentos.</p>
+            <p class="chart-help">Os tons de azul representam a densidade de anúncios que cumprem os filtros atuais, por km². Selecione uma freguesia para explorar os seus alojamentos.</p>
             <p id="map-status" role="status"></p>
             <button class="secondary" id="retry-load" type="button" hidden>Tentar novamente</button>
             <div class="map-canvas">
@@ -79,17 +85,25 @@
               </div>
             </div>
             <div class="density-legend" id="density-legend" hidden>
-              <p id="legend-title">Densidade de anúncios · anúncios/km²</p>
-              <ul id="legend-values" aria-label="Sete intervalos de densidade, comuns a Lisboa e Porto"></ul>
-              <p class="legend-note">Total de anúncios ÷ área aproximada da freguesia. Escala comum a Lisboa e Porto, independente dos filtros.</p>
+              <div class="legend-heading">
+                <p id="legend-title">Densidade de anúncios filtrados</p>
+                <span class="legend-unit">anúncios/km²</span>
+              </div>
+              <p class="legend-direction">Azul claro: menor densidade · Azul escuro: maior densidade</p>
+              <ul id="legend-values" aria-label="Sete intervalos fixos de densidade e uma cor neutra para zero anúncios, comuns a Lisboa e Porto"></ul>
+              <p class="legend-note">Intervalos fixos para Lisboa e Porto. As cores aplicam os filtros gerais e o intervalo do histograma, sem restringir à freguesia selecionada.</p>
             </div>
             <p id="parish-name">Passe o rato sobre uma freguesia para ver os valores. Clique para selecionar.</p>
-            <p class="map-help">Use a roda do rato ou os botões + e − para ampliar. Arraste para deslocar. Os pontos surgem apenas na freguesia selecionada; clique num ponto para selecionar o alojamento.</p>
+            <p class="map-help" id="map-help">Use a roda do rato ou os botões + e − para ampliar. Arraste para deslocar. Os pontos surgem apenas na freguesia selecionada; clique num ponto para selecionar o alojamento. «Ver cidade e limpar seleção» remove a freguesia e o anúncio selecionados, mantendo os filtros gerais e a comparação.</p>
           </section>
           <section class="results-panel" aria-labelledby="results-title">
             <h2 id="results-title">Anúncios encontrados</h2>
             <label class="sort-label">Ordenar por <select id="listing-sort"><option value="price-asc">Preço crescente</option><option value="price-desc">Preço decrescente</option><option value="rating-desc">Melhor avaliação</option></select></label>
             <p id="result-count" role="status"></p>
+            <div id="empty-results" class="empty-results" hidden>
+              <p id="empty-results-message"></p>
+              <button class="secondary" id="clear-general-filters" type="button">Limpar filtros gerais</button>
+            </div>
             <div class="listing-scroll" id="listing-scroll" role="region" aria-label="Lista de anúncios" tabindex="0"><ul id="listing-list"></ul></div>
             <nav class="pagination" aria-label="Páginas de anúncios">
               <button class="secondary" id="previous-page" type="button" disabled>Anterior</button>
@@ -140,6 +154,7 @@
             </label>
           </div>
           <p id="zones-context" class="chart-help" role="status"></p>
+          <p id="zones-selection" class="zones-selection" role="status" hidden></p>
           <p class="chart-help" id="zones-help">Selecione uma freguesia para a destacar no mapa e atualizar a lista e os gráficos. Use Tab e Enter ou Espaço para selecionar por teclado. n = anúncios com preço válido; «Amostra reduzida» indica menos de 30.</p>
           <div class="zones-scroll" role="region" aria-label="Preços medianos por freguesia" tabindex="0">
             <div class="zone-columns" aria-hidden="true">
@@ -154,7 +169,7 @@
       </section>
 
       <section id="details-view" aria-labelledby="details-title" hidden>
-        <button class="secondary" id="back-dashboard" type="button">← Voltar ao dashboard</button>
+        <button class="secondary" id="back-dashboard" type="button">← Voltar à exploração</button>
         <article class="details-panel">
           <p id="details-context"></p>
           <h1 id="details-title" tabindex="-1"></h1>
@@ -169,7 +184,7 @@
       </section>
 
       <section id="comparison-view" aria-labelledby="comparison-title" hidden>
-        <button class="secondary" id="comparison-back" type="button">← Voltar ao dashboard</button>
+        <button class="secondary" id="comparison-back" type="button">← Voltar à exploração</button>
         <h1 id="comparison-title" tabindex="-1">Comparar alojamentos</h1>
         <p class="chart-help">Até três anúncios reais. A seleção mantém-se ao mudar os filtros ou a cidade. As cores identificam os preços no histograma da respetiva cidade.</p>
         <p id="comparison-empty" role="status"></p>
@@ -191,7 +206,7 @@
           </section>
           <section aria-labelledby="data-method-title">
             <h2 id="data-method-title">Como ler os resultados</h2>
-            <p><strong>Densidade:</strong> total de anúncios da freguesia dividido pela área aproximada do seu polígono em km². A área é calculada na esfera a partir do GeoJSON (D3, raio terrestre de 6371,0088 km). A associação usa o nome da freguesia. Os sete intervalos são comuns às duas cidades, com limites em 25, 50, 100, 250, 500 e 1000 anúncios/km². Os filtros não alteram a densidade.</p>
+            <p><strong>Densidade:</strong> número de anúncios da freguesia que cumprem os filtros gerais e o intervalo do histograma, dividido pela área aproximada do seu polígono em km². A área é calculada na esfera a partir do GeoJSON (D3, raio terrestre de 6371,0088 km). A associação usa o nome da freguesia. A freguesia selecionada não restringe este cálculo. Os sete intervalos são fixos e comuns às duas cidades, com limites em 25, 50, 100, 250, 500 e 1000 anúncios/km²; zero anúncios tem uma cor neutra própria. Sem filtros gerais nem intervalo no histograma, a densidade corresponde ao total dos anúncios.</p>
             <p><strong>Valores em falta:</strong> preços e características numéricas vazios, inválidos ou negativos ficam indisponíveis; avaliações acima de 5 também. Não são substituídos por zero. Cada filtro ou gráfico exclui anúncios sem o atributo necessário; as estatísticas do preço usam apenas preços válidos. Coordenadas inválidas não originam pontos no mapa.</p>
             <p><strong>Extremos:</strong> a escala inicial do preço usa o percentil 95, com arredondamento do limite. No scatterplot, o eixo X usa o percentil 99, exceto a avaliação (0–5). Os anúncios fora da escala continuam na lista e, na freguesia selecionada, no mapa. A opção «Incluir todos os preços na escala dos gráficos» expande ambos os eixos; os filtros continuam a aplicar-se.</p>
           </section>

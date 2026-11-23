@@ -1,0 +1,108 @@
+AIRBNB EXPLORER
+MELHORIAS APÓS A AVALIAÇÃO HEURÍSTICA
+23 de novembro de 2026
+
+CONTEXTO
+
+O Airbnb Explorer foi analisado segundo as 10 heurísticas de usabilidade de Jakob Nielsen. A inspeção realizada na aplicação publicada identificou 9 problemas: 2 de gravidade 3, 6 de gravidade 2 e 1 de gravidade 1. As melhorias seguintes foram definidas para tornar a utilização mais clara, consistente e intuitiva, mantendo as quatro visualizações e as funcionalidades existentes.
+
+IMPORTANTE — ESTADO DE VERIFICAÇÃO
+
+Este documento regista as correções e alterações solicitadas ao Codex depois da avaliação. Não confirma que todas já estejam implementadas: no momento desta redação, o último commit verificável no GitHub é ddc60e8, de 23/11/2026, anterior aos pedidos de correção. Depois da execução local do Codex, é necessário confirmar cada alteração e atualizar o estado deste registo. Não apresentar correções ainda não verificadas como resultados concluídos.
+
+1. CORREÇÕES DEFINIDAS A PARTIR DA AVALIAÇÃO HEURÍSTICA
+
+P1 — Preservação dos filtros ao mudar de cidade (gravidade 3)
+ANTES: a passagem de Lisboa para Porto, ou vice-versa, repunha automaticamente todos os filtros, dificultando comparações com os mesmos critérios.
+ALTERAÇÃO SOLICITADA: manter os filtros gerais compatíveis (tipo, preços, quartos, capacidade, avaliação e estadia mínima), limpar a freguesia anterior e, quando necessário, o intervalo selecionado no histograma; informar o utilizador sobre os critérios repostos. Preservar imóveis guardados para comparação.
+ESTADO: pendente de confirmação na versão corrigida.
+
+P2 — Legibilidade e seleção no scatterplot (gravidade 3)
+ANTES: os pontos normais tinham raio de cerca de 2 px e opacidade de 22%, sendo difíceis de distinguir e selecionar, mesmo com poucos anúncios.
+ALTERAÇÃO SOLICITADA: aumentar moderadamente o tamanho e a opacidade dos pontos, melhorar a área de clique e o destaque em hover/seleção, mantendo as cores por tipo de alojamento, o jitter e os tooltips. Testar tanto com poucos pontos como com muitos.
+ESTADO: pendente de confirmação na versão corrigida.
+
+P3 — Significado da ação «Vista geral da cidade» (gravidade 2)
+ANTES: o botão repunha o mapa, mas também eliminava a seleção da freguesia e do alojamento, mudando o conjunto de resultados.
+ALTERAÇÃO SOLICITADA: esclarecer no texto ou na ajuda que a ação regressa à cidade inteira e limpa a seleção geográfica, sem apagar os filtros gerais ou a lista de imóveis em comparação.
+ESTADO: pendente de confirmação na versão corrigida.
+
+P4 — Recuperação quando não existem resultados (gravidade 2)
+ANTES: a aplicação apresentava «Sem resultados», mas a solução exigia que o utilizador procurasse o controlo de limpeza dos filtros.
+ALTERAÇÃO SOLICITADA: mostrar uma mensagem contextual e disponibilizar uma ação próxima da lista para limpar os filtros gerais, preservando a freguesia escolhida.
+ESTADO: pendente de confirmação na versão corrigida.
+
+P5 — Clareza do filtro de estadia mínima (gravidade 2)
+ANTES: o significado do filtro «Estadia mínima exigida: pelo menos» podia ser mal interpretado.
+ALTERAÇÃO SOLICITADA: explicar explicitamente que o critério procura anúncios cuja estadia mínima exigida é igual ou superior a X noites; manter a condição de filtragem existente (minimum_nights >= X) e tornar o texto dos filtros ativos coerente.
+ESTADO: pendente de confirmação na versão corrigida.
+
+P6 — Confirmação da seleção em «Comparar Zonas» (gravidade 2)
+ANTES: a freguesia selecionada era destacada na visualização, mas a contagem atualizada dos resultados podia ficar fora da área visível.
+ALTERAÇÃO SOLICITADA: adicionar uma indicação discreta junto da visualização com o nome da freguesia selecionada e o número de anúncios encontrados, informando que mapa, lista e gráficos foram atualizados; sem provocar deslocações inesperadas da página.
+ESTADO: pendente de confirmação na versão corrigida.
+
+P7 — Terminologia do menor preço (gravidade 2)
+ANTES: «Menor preço disponível» podia sugerir uma tarifa de reserva confirmada.
+ALTERAÇÃO SOLICITADA: usar «Menor preço anunciado entre os selecionados», deixando claro que os valores são preços anunciados e não transações.
+ESTADO: pendente de confirmação na versão corrigida.
+
+P8 — Contexto temporal dos dados (gravidade 2)
+ANTES: a informação sobre o período de recolha encontrava-se na secção metodológica, longe dos indicadores de preço.
+ALTERAÇÃO SOLICITADA: colocar uma nota discreta junto dos indicadores ou gráficos, baseada nas datas verificadas dos arquivos detalhados correspondentes (setembro de 2026), sem inventar uma data de recolha para os CSV resumidos.
+ESTADO: pendente de confirmação na versão corrigida.
+
+P9 — Consistência da linguagem (gravidade 1)
+ANTES: existia a expressão inglesa «Voltar ao dashboard» numa interface em português.
+ALTERAÇÃO SOLICITADA: substituir por «Voltar à exploração» nas vistas de detalhes e comparação.
+ESTADO: pendente de confirmação na versão corrigida.
+
+2. MELHORIAS ADICIONAIS PROPOSTAS APÓS FEEDBACK DE UM COLEGA
+
+M1 — Cabeçalho visível durante o scroll
+FEEDBACK: os controlos de navegação deixam de estar à vista quando o utilizador percorre uma página longa.
+ALTERAÇÃO SOLICITADA: tornar o cabeçalho fixo no topo, preferencialmente com CSS position: sticky, mantendo os botões acessíveis, o conteúdo visível e o comportamento responsivo.
+ESTADO: pendente de confirmação na versão corrigida.
+
+M2 — Maior destaque do botão «Comparar»
+FEEDBACK: a presença de imóveis guardados para comparação deveria ser mais evidente.
+ALTERAÇÃO SOLICITADA: destacar visualmente o botão quando existe uma seleção; manter a comparação desativada com menos de dois imóveis e utilizar uma cor de destaque com bom contraste quando existem dois ou três. Sem animações excessivas.
+ESTADO: pendente de confirmação na versão corrigida.
+
+M3 — Mapa dinâmico com tons de azul
+ANTES: a densidade do mapa usava sete cores distintas e representava a distribuição total, sem responder aos filtros como as restantes visualizações.
+ALTERAÇÃO SOLICITADA: substituir a escala multicolorida por tons sequenciais de azul e recalcular a densidade com os anúncios que correspondem aos filtros ativos. Fórmula: densidade filtrada = número de anúncios filtrados da freguesia / área da freguesia em km². Incluir o intervalo do histograma; ignorar apenas a restrição da própria freguesia para continuar a comparar todas as zonas. Manter os mesmos limites de densidade entre cidades e seleções, distinguir o valor zero e atualizar legendas e tooltips.
+ESTADO: pendente de confirmação na versão corrigida.
+
+3. FUNCIONALIDADES A PRESERVAR
+
+As alterações não devem modificar a estrutura das quatro visualizações (mapa, histograma, scatterplot e Comparar Zonas), a navegação entre Lisboa e Porto, a lista e os detalhes dos anúncios, a comparação de até três imóveis, o brushing do histograma ou os cálculos de medianas já existentes. A implementação continua em HTML, CSS, JavaScript e D3.js v7.
+
+4. EVIDÊNCIAS PARA A APRESENTAÇÃO FINAL
+
+Guardar capturas de ecrã do ANTES e do DEPOIS, especialmente para:
+- P2: scatterplot com pontos pouco visíveis vs. pontos melhorados;
+- P1: mudança de cidade que repunha filtros vs. preservação dos critérios;
+- P6: seleção de uma freguesia no ranking vs. feedback contextual junto da visualização;
+- M1 e M2: cabeçalho e botão Comparar antes e depois;
+- M3: mapa multicolorido e estático vs. mapa azul que acompanha os filtros.
+
+O relatório original de avaliação heurística deve ser mantido como evidência de problemas observados. As correções finais devem ser demonstradas numa versão efetivamente testada, sem alterar retroativamente os resultados originais.
+
+5. VERIFICAÇÃO FINAL A REGISTAR
+
+[ ] Confirmar a implementação de P1 a P9.
+[ ] Confirmar a implementação de M1 a M3.
+[ ] Testar Lisboa e Porto, filtros combinados, histograma, scatterplot e Comparar Zonas.
+[ ] Testar comparação com 0, 1, 2 e 3 alojamentos.
+[ ] Verificar estados sem resultados e funcionamento em diferentes larguras de ecrã.
+[ ] Confirmar que não existem erros no navegador.
+[ ] Guardar capturas de ecrã do depois.
+[ ] Atualizar este documento com as correções efetivamente concluídas.
+
+FONTES DO REGISTO
+
+- «Avaliação Heurística do Airbnb Explorer», 23/11/2026, seis páginas, com problemas P1–P9 e capturas E1–E4.
+- Feedback informal de um colega sobre cabeçalho, botão Comparar e cores do mapa.
+- Pedidos de correção transmitidos ao Codex nesta conversa.
+- Código publicado no repositório veigaaa/AirBNB_VI, último commit verificável ddc60e8.
